@@ -48,14 +48,14 @@ async function scanActiveTab() {
       sure, review, unclassified,
     });
     // 5) M0 出口：下载 inventory.json；M1 换 File System Access 直写
-    const blob = new Blob([JSON.stringify(inventory, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+    // MV3 SW 无 URL.createObjectURL（Blob URL 不可用），改用 data URL
+    const body = JSON.stringify(inventory, null, 2);
+    const url = `data:application/json;charset=utf-8,${encodeURIComponent(body)}`;
     const dlId = await chrome.downloads.download({
       url,
       filename: `casefront/${inventory.meta.session_id}/inventory.json`,
       saveAs: false,
     });
-    URL.revokeObjectURL(url);
     return { ok: true, path: `casefront/${inventory.meta.session_id}/inventory.json`, count: inventory.elements.length, downloadId: dlId };
   } finally {
     try { await chrome.debugger.detach(target); } catch { /* 已分离 */ } // 任何路径必须 detach
