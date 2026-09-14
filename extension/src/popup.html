@@ -8,13 +8,20 @@
       --card: #ffffff;
       --text: #1d1d1f;
       --text-2: #6e6e73;
-      --sep: rgba(60, 60, 67, 0.12);
+      --text-3: #aeaeb2;
+      --sep: rgba(60, 60, 67, 0.10);
       --blue: #007aff;
       --blue-hover: #0071e3;
+      --blue-press: #0062cc;
       --green: #34c759;
-      --fill: rgba(120, 120, 128, 0.12);
-      --fill-hover: rgba(120, 120, 128, 0.20);
-      --radius: 12px;
+      --green-bg: rgba(52, 199, 89, 0.12);
+      --red: #ff3b30;
+      --orange: #ff9500;
+      --fill: rgba(120, 120, 128, 0.10);
+      --fill-hover: rgba(120, 120, 128, 0.16);
+      --fill-press: rgba(120, 120, 128, 0.22);
+      --radius: 14px;
+      --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -22,185 +29,256 @@
         --card: #2c2c2e;
         --text: #f5f5f7;
         --text-2: #98989d;
+        --text-3: #636366;
         --sep: rgba(84, 84, 88, 0.45);
         --blue: #0a84ff;
         --blue-hover: #3395ff;
+        --blue-press: #409cff;
         --green: #30d158;
-        --fill: rgba(120, 120, 128, 0.24);
-        --fill-hover: rgba(120, 120, 128, 0.36);
+        --green-bg: rgba(48, 209, 88, 0.16);
+        --red: #ff453a;
+        --orange: #ff9f0a;
+        --fill: rgba(120, 120, 128, 0.20);
+        --fill-hover: rgba(120, 120, 128, 0.28);
+        --fill-press: rgba(120, 120, 128, 0.36);
       }
     }
     * { box-sizing: border-box; }
     body {
-      width: 360px;
+      width: 380px;
       margin: 0;
-      padding: 12px;
+      padding: 14px;
       background: var(--bg);
       color: var(--text);
-      font: 13px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Segoe UI", sans-serif;
+      font: 13px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Segoe UI", sans-serif;
       -webkit-font-smoothing: antialiased;
     }
     .view { display: none; }
-    .view.active { display: block; animation: fade-in 180ms ease-out; }
+    .view.active { display: block; animation: fade-in 200ms cubic-bezier(0.25, 0.8, 0.35, 1); }
     @keyframes fade-in {
-      from { opacity: 0; transform: translateY(4px); }
+      from { opacity: 0; transform: translateY(5px); }
       to   { opacity: 1; transform: none; }
     }
+
     .card {
       background: var(--card);
+      border: 0.5px solid var(--sep);
       border-radius: var(--radius);
       padding: 14px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
       margin-bottom: 10px;
     }
-    h3 {
-      margin: 0 0 4px;
-      font-size: 16px;
-      font-weight: 600;
-      letter-spacing: -0.2px;
+
+    /* ---- 头部 ---- */
+    .head { display: flex; align-items: center; gap: 11px; }
+    .logo {
+      width: 38px; height: 38px; flex: none;
+      border-radius: 9.5px;
+      background: linear-gradient(180deg, #37a2ff, #007aff);
+      display: grid; place-items: center;
+      box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.25), 0 1px 2px rgba(0,122,255,0.35);
     }
-    .subtitle { color: var(--text-2); font-size: 12px; margin-bottom: 10px; }
-    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .row + .row { margin-top: 10px; }
+    .logo svg { width: 22px; height: 22px; }
+    .head-txt { flex: 1; min-width: 0; }
+    .head-txt h3 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
+    .head-txt .sub { color: var(--text-2); font-size: 11.5px; margin-top: 1px; }
+
+    /* ---- 控件 ---- */
+    .row { display: flex; gap: 8px; align-items: center; }
     button {
-      appearance: none;
-      border: none;
-      font: inherit;
-      font-weight: 500;
-      cursor: pointer;
-      border-radius: 9px;
-      padding: 7px 14px;
-      min-height: 30px;
-      transition: background-color 160ms ease, transform 100ms ease, opacity 160ms ease;
+      appearance: none; border: none; font: inherit;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      font-weight: 500; cursor: pointer;
+      border-radius: 10px; padding: 0 14px; height: 34px;
+      transition: background-color 150ms ease, transform 90ms ease, opacity 150ms ease;
     }
-    button:active { transform: scale(0.97); }
+    button svg { width: 15px; height: 15px; flex: none; }
+    button:active:not(:disabled) { transform: scale(0.97); }
     button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-    button:disabled { opacity: 0.45; cursor: default; transform: none; }
-    .primary { background: var(--blue); color: #fff; }
-    .primary:hover { background: var(--blue-hover); }
-    .secondary { background: var(--fill); color: var(--blue); }
-    .secondary:hover { background: var(--fill-hover); }
-    .block { flex: 1; width: 100%; }
+    button:disabled { opacity: 0.4; cursor: default; transform: none; }
+    .primary { background: var(--blue); color: #fff; font-weight: 600; }
+    .primary:hover:not(:disabled) { background: var(--blue-hover); }
+    .primary:active:not(:disabled) { background: var(--blue-press); }
+    .secondary { background: var(--fill); color: var(--blue); font-weight: 500; }
+    .secondary:hover:not(:disabled) { background: var(--fill-hover); }
+    .secondary:active:not(:disabled) { background: var(--fill-press); }
+    .secondary.small { height: 28px; padding: 0 11px; font-size: 12px; border-radius: 8px; }
+    .secondary.small svg { width: 13px; height: 13px; }
+    .block { flex: 1; }
+
     select#mode {
-      flex: 1;
-      appearance: none;
-      border: none;
-      font: inherit;
-      color: var(--text);
-      background: var(--fill) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236e6e73' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;
-      border-radius: 9px;
-      padding: 7px 26px 7px 12px;
-      min-height: 30px;
-      cursor: pointer;
-      transition: background-color 160ms ease;
+      flex: 1; appearance: none; border: none; font: inherit;
+      height: 34px; color: var(--text);
+      background: var(--fill) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236e6e73' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 11px center;
+      border-radius: 10px;
+      padding: 0 28px 0 12px; cursor: pointer;
+      transition: background-color 150ms ease;
     }
     select#mode:hover { background-color: var(--fill-hover); }
     select#mode:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-    #status {
+
+    /* ---- 状态区：图标 + 标题 + 子文案 + 路径芯片 ---- */
+    .status {
+      margin-top: 12px; padding: 10px 12px;
       background: var(--fill);
-      border-radius: 9px;
-      padding: 8px 10px;
-      font-size: 12px;
-      white-space: pre-wrap;
-      word-break: break-all;
-      color: var(--text);
+      border-radius: 11px;
     }
-    .hint { color: var(--text-2); font-size: 12px; }
-    .row[hidden] { display: none; }
-    ul#list {
-      list-style: none;
-      margin: 10px 0 0;
-      padding: 0;
-      max-height: 280px;
-      overflow-y: auto;
+    .status-line { display: flex; gap: 8px; align-items: flex-start; }
+    .status-ico { width: 16px; height: 16px; flex: none; margin-top: 1.5px; }
+    .status-ico svg { width: 16px; height: 16px; display: block; }
+    .status-ico svg.spin { animation: spin 0.85s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status-txt { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 500; }
+    .status-sub { display: block; margin-top: 3px; font-weight: 400; color: var(--text-2); font-size: 12px; }
+    .path-row {
+      margin-top: 9px; display: flex; gap: 8px; align-items: center;
       background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      border: 0.5px solid var(--sep);
+      border-radius: 9px;
+      padding: 7px 8px 7px 10px;
     }
+    .path-text {
+      flex: 1; min-width: 0;
+      font-family: var(--mono);
+      font-size: 10.5px; line-height: 1.45;
+      color: var(--text-2);
+      word-break: break-all;
+    }
+    #copy-path { height: 26px; padding: 0 10px; font-size: 12px; border-radius: 7px; flex: none; }
+    #copy-path svg { width: 13px; height: 13px; }
+    #copy-path.ok { color: var(--green); background: var(--green-bg); }
+    .hint { margin-top: 10px; color: var(--text-3); font-size: 11.5px; line-height: 1.55; }
+    .hint .k { color: var(--text-2); font-weight: 500; }
+
+    /* ---- 勾选视图 ---- */
+    .top { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+    .top h3 { flex: 1; margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
+    .toolbar { margin-bottom: 10px; }
+    #sel-count { margin: 0 2px 8px; color: var(--text-2); font-size: 12px; }
+    #sel-count b { color: var(--text); font-weight: 600; }
+
+    ul#list {
+      list-style: none; margin: 0; padding: 0;
+      max-height: 300px; overflow-y: auto;
+      background: var(--card);
+      border: 0.5px solid var(--sep);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+    ul#list::-webkit-scrollbar { width: 8px; }
+    ul#list::-webkit-scrollbar-thumb { background: var(--fill-hover); border-radius: 4px; border: 2px solid transparent; background-clip: content-box; }
     ul#list li {
-      display: flex;
-      gap: 9px;
-      align-items: flex-start;
+      display: flex; gap: 10px; align-items: center;
       padding: 9px 12px;
     }
-    ul#list li + li { border-top: 1px solid var(--sep); }
+    ul#list li + li { border-top: 0.5px solid var(--sep); }
     ul#list li:hover { background: var(--fill); }
     ul#list input[type="checkbox"] {
       appearance: none;
-      width: 17px;
-      height: 17px;
-      margin: 2px 0 0;
-      border: 1.5px solid var(--text-2);
-      border-radius: 5px;
-      cursor: pointer;
-      flex: none;
+      width: 18px; height: 18px; margin: 0; flex: none;
+      border: 1.5px solid var(--text-3);
+      border-radius: 5.5px; cursor: pointer; position: relative;
       transition: background-color 140ms ease, border-color 140ms ease;
-      position: relative;
     }
-    ul#list input[type="checkbox"]:checked {
-      background: var(--blue);
-      border-color: var(--blue);
-    }
+    ul#list input[type="checkbox"]:checked { background: var(--blue); border-color: var(--blue); }
     ul#list input[type="checkbox"]:checked::after {
       content: "";
-      position: absolute;
-      left: 4.5px;
-      top: 1.5px;
-      width: 4px;
-      height: 8px;
-      border: solid #fff;
-      border-width: 0 1.8px 1.8px 0;
+      position: absolute; left: 5px; top: 1.5px;
+      width: 4.5px; height: 8.5px;
+      border: solid #fff; border-width: 0 1.8px 1.8px 0;
       transform: rotate(45deg);
     }
     ul#list input[type="checkbox"]:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-    ul#list label { flex: 1; word-break: break-all; cursor: pointer; font-size: 12.5px; }
-    .grp { color: var(--green); font-size: 11px; }
-    #sel-count { margin-top: 8px; }
-    .top { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-    .top h3 { flex: 1; margin: 0; font-size: 15px; }
-    .back { font-size: 12px; padding: 5px 10px; min-height: 26px; }
-    #save { padding-left: 18px; padding-right: 18px; }
+    .el-main { flex: 1; min-width: 0; }
+    .el-name { font-size: 12.5px; word-break: break-all; }
+    .el-meta { display: flex; gap: 5px; margin-top: 3px; flex-wrap: wrap; }
+    .tag {
+      font-family: var(--mono); font-size: 9.5px; line-height: 1;
+      padding: 3px 5px; border-radius: 5px;
+      background: var(--fill); color: var(--text-2);
+    }
+    .tag.g { background: var(--green-bg); color: var(--green); }
   </style>
 </head>
 <body>
   <!-- 视图 1：采集 -->
-  <div id="view-scan" class="view">
+  <div id="view-scan" class="view active">
     <div class="card">
-      <h3>casefront</h3>
-      <div class="subtitle">Web 测试用例 AI 前置助手</div>
-      <div class="row">
+      <div class="head">
+        <div class="logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+            <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/>
+            <circle cx="12" cy="12" r="2.4" fill="#fff" stroke="none"/>
+          </svg>
+        </div>
+        <div class="head-txt">
+          <h3>CaseFront</h3>
+          <div class="sub">Web 测试用例 AI 前置助手</div>
+        </div>
+      </div>
+      <div class="row" style="margin-top: 13px;">
         <select id="mode">
           <option value="compact" selected>精简（同类折叠）</option>
           <option value="full">完整（全量）</option>
         </select>
-        <button id="scan" class="primary">扫描此页</button>
+        <button id="scan" class="primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/>
+            <path d="M8.5 12h7"/>
+          </svg>
+          扫描此页
+        </button>
       </div>
-      <div class="row">
-        <div id="status">就绪</div>
-      </div>
-      <div class="row" id="copy-bar" hidden>
-        <button id="copy-path" class="secondary block">📋 复制路径</button>
+      <div class="status" id="status">
+        <div class="status-line">
+          <span class="status-ico" id="status-ico"></span>
+          <span class="status-txt" id="status-text">就绪<span class="status-sub" id="status-sub"></span></span>
+        </div>
+        <div class="path-row" id="path-row" hidden>
+          <span class="path-text" id="path-text"></span>
+          <button id="copy-path" class="secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="11" height="11" rx="2.5"/>
+              <path d="M5.5 14.5H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 2 2v.5"/>
+            </svg>
+            <span id="copy-label">复制路径</span>
+          </button>
+        </div>
       </div>
     </div>
-    <div class="card">
-      <div class="hint">
-        精简模式：5 个以上同类元素折叠为一组；完整模式全量导出。扫描后可勾选按需收缩用例范围。
-      </div>
+    <div class="hint">
+      <span class="k">精简模式</span>：5 个以上同类元素折叠为一组；<span class="k">完整模式</span>全量导出。<br>
+      扫描后进入勾选视图，可按需收缩用例范围。
     </div>
   </div>
 
   <!-- 视图 2：勾选 -->
   <div id="view-review" class="view">
     <div class="top">
-      <button id="back" class="secondary back">← 重扫</button>
+      <button id="back" class="secondary small">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+        重扫
+      </button>
       <h3>勾选纳入用例生成的元素</h3>
     </div>
-    <div class="row">
-      <button id="all" class="secondary">全选</button>
-      <button id="none" class="secondary">全不选</button>
-      <button id="save" class="primary">保存并导出</button>
+    <div class="row toolbar">
+      <button id="all" class="secondary small block">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 12.5 5 5 10-11"/></svg>
+        全选
+      </button>
+      <button id="none" class="secondary small block">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 12h12"/></svg>
+        全不选
+      </button>
+      <button id="save" class="primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3.5v11M12 14.5 7.5 10M12 14.5 16.5 10"/>
+          <path d="M4 16.5v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+        </svg>
+        保存并导出
+      </button>
     </div>
-    <div id="sel-count" class="hint">已选 0 / 0</div>
+    <div id="sel-count">已选 <b>0</b> / 0</div>
     <ul id="list"></ul>
   </div>
 

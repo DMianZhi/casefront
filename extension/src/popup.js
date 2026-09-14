@@ -1,6 +1,13 @@
 import { applySelections, saveScan } from './selection.js';
 
-const status = document.getElementById('status');
+const statusEl = document.getElementById('status');
+const statusIco = document.getElementById('status-ico');
+const statusText = document.getElementById('status-text');
+const statusSub = document.getElementById('status-sub');
+const pathRow = document.getElementById('path-row');
+const pathText = document.getElementById('path-text');
+const copyBtn = document.getElementById('copy-path');
+const copyLabel = document.getElementById('copy-label');
 const modeEl = document.getElementById('mode');
 const viewScan = document.getElementById('view-scan');
 const viewReview = document.getElementById('view-review');
@@ -9,56 +16,101 @@ const selCount = document.getElementById('sel-count');
 
 let currentSession = null; // { session_id, elements }
 const pending = new Map(); // id -> boolean
+let exportPath = null;
 
 function showView(which) {
   viewScan.classList.toggle('active', which === 'scan');
   viewReview.classList.toggle('active', which === 'review');
 }
 
-function renderList() {
-  listEl.textContent = '';
-  let selected = 0;
-  for (const el of currentSession.elements) {
-    const li = document.createElement('li');
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = pending.get(el.id) ?? el.selected !== false;
-    if (cb.checked) selected++;
-    cb.dataset.id = el.id;
-    cb.addEventListener('change', () => {
-      pending.set(el.id, cb.checked);
-      updateCount();
-    });
-    const label = document.createElement('label');
-    const typeTag = el.interaction_type ? `[${el.interaction_type}] ` : '';
-    const grpInfo = el.group ? ` （${el.group.signature} ×${el.group.member_count}）` : '';
-    label.textContent = typeTag + (el.label || el.hints?.placeholder || '(未命名)') + grpInfo;
-    if (el.group) label.className = 'grp';
-    li.appendChild(cb);
-    li.appendChild(label);
-    listEl.appendChild(li);
+// ---- 状态区：内联 SVG 图标 + 主文案 + 副文案 ----
+const ICONS = {
+  idle: '<svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 11.2a2.6 2.6 0 0 1 0 5.2zM12 7.5v.2"/></svg>',
+  load: '<svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M12 7.5v4.5l3 2.5"/></svg>',
+  ok: '<svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="m8.4 12.4 2.4 2.4 4.8-5.2"/></svg>',
+  err: '<svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 8v5M12 15.8v.2"/></svg>',
+  warn: '<svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.2 2.8 20h18.4L12 4.2z"/><path d="M12 10.2v4M12 17v.2"/></svg>',
+};
+
+function setStatus(kind, text, sub = '') {
+  statusIco.innerHTML = ICONS[kind] ?? '';
+  if (kind === 'load') {
+    const svg = statusIco.querySelector('svg');
+    if (svg) svg.classList.add('spinning');
   }
-  updateCount(selected);
+  statusText.textContent = text; // .status-sub 为块级独立元素，不受 textContent 影响
+  statusSub.textContent = sub;
 }
 
-function updateCount() {
+function initialStatus() {
+  setStatus('idle', '就绪', '扫描当前页面，生成可勾选的交互元素清单');
+}
+
+// ---- 勾选视图渲染：复选框 + 名称/占位符 + 类型徽章 + 折叠组徽章 ----
+function refreshCount() {
   const total = currentSession.elements.length;
   let selected = 0;
   for (const el of currentSession.elements) {
     if (pending.get(el.id) ?? el.selected !== false) selected++;
   }
-  selCount.textContent = `已选 ${selected} / ${total}`;
+  selCount.innerHTML = `已选 <b>${String(selected)}</b> / ${String(total)}`;
+}
+
+function renderList() {
+  listEl.textContent = '';
+  for (const el of currentSession.elements) {
+    const li = document.createElement('li');
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = pending.get(el.id) ?? el.selected !== false;
+    cb.dataset.id = el.id;
+    cb.addEventListener('change', () => {
+      pending.set(el.id, cb.checked);
+      refreshCount();
+    });
+
+    const main = document.createElement('div');
+    main.className = 'el-main';
+    const name = document.createElement('div');
+    name.className = 'el-name';
+    name.textContent = el.label || el.hints?.placeholder || '(未命名)';
+    const meta = document.createElement('div');
+    meta.className = 'el-meta';
+    if (el.interaction_type) {
+      const t = document.createElement('span');
+      t.className = 'tag';
+      t.textContent = el.interaction_type;
+      meta.appendChild(t);
+    }
+    if (el.group) {
+      const g = document.createElement('span');
+      g.className = 'tag g';
+      g.textContent = `×${el.group.member_count}`;
+      g.title = `同类折叠组：${el.group.signature}`;
+      meta.appendChild(g);
+    }
+    main.appendChild(name);
+    main.appendChild(meta);
+
+    li.appendChild(cb);
+    li.appendChild(main);
+    listEl.appendChild(li);
+  }
+  refreshCount();
 }
 
 document.getElementById('scan').onclick = async () => {
   const mode = modeEl?.value === 'full' ? 'full' : 'compact';
-  status.textContent = mode === 'compact' ? '采集中…（精简模式：同类元素折叠）' : '采集中…（完整模式：全量清单）';
+  setStatus('load', '采集中…', mode === 'compact' ? '精简模式：同类元素折叠为一组代表' : '完整模式：全量清单，不折叠');
   let res;
   try { res = await chrome.runtime.sendMessage({ type: 'SCAN', mode }); }
-  catch (e) { status.textContent = '失败：' + e.message; return; }
-  if (!res.ok) { status.textContent = `❌ ${res.error}`; return; }
-  const foldInfo = res.folded_groups > 0 ? `\n同类折叠：${res.folded_groups} 组` : '';
-  status.textContent = `✅ 采集 ${res.count} 个交互元素${foldInfo}\n请勾选要纳入用例生成的元素，再点「保存并导出」`;
+  catch (e) { setStatus('err', '扫描失败：' + e.message); return; }
+  if (!res.ok) {
+    setStatus('err', res.error, 'DevTools 开着会占用调试通道，关闭后重试');
+    return;
+  }
+  setStatus('ok', `已采集 ${res.count} 个交互元素`, res.folded_groups > 0 ? `同类折叠：${res.folded_groups} 组，进入勾选确认` : '进入勾选确认');
   // 拉取快照进入勾选视图
   const snap = await chrome.runtime.sendMessage({ type: 'GET_LAST_SCAN' });
   if (snap?.ok && snap.inventory) {
@@ -69,7 +121,10 @@ document.getElementById('scan').onclick = async () => {
   }
 };
 
-document.getElementById('back').onclick = () => showView('scan');
+document.getElementById('back').onclick = () => {
+  initialStatus();
+  showView('scan');
+};
 
 document.getElementById('all').onclick = () => {
   for (const el of currentSession.elements) pending.set(el.id, true);
@@ -80,11 +135,8 @@ document.getElementById('none').onclick = () => {
   renderList();
 };
 
-// ---- 导出路径一键复制（下载落盘绝对路径 → 剪贴板，Comate 里 @ 直接粘）----
-let exportPath = null;
-const copyBar = document.getElementById('copy-bar');
-const copyBtn = document.getElementById('copy-path');
-
+// ---- 复制导出绝对路径（下载落盘真实路径 → 剪贴板，Comate 里 @ 直接粘）----
+const COPY_ICON = copyBtn.innerHTML;
 copyBtn.onclick = async () => {
   if (!exportPath) return;
   let ok = false;
@@ -101,15 +153,22 @@ copyBtn.onclick = async () => {
     try { ok = document.execCommand('copy'); } catch { /* 忽略 */ }
     ta.remove();
   }
-  copyBtn.textContent = ok ? '✅ 已复制' : '❌ 复制失败';
-  setTimeout(() => { copyBtn.textContent = '📋 复制路径'; }, 1500);
+  copyBtn.classList.toggle('ok', ok);
+  copyLabel.textContent = ok ? '已复制' : '复制失败';
+  if (!ok) copyBtn.style.color = 'var(--red)';
+  setTimeout(() => {
+    copyBtn.classList.remove('ok');
+    copyBtn.style.color = '';
+    copyLabel.textContent = '复制路径';
+  }, 1500);
 };
 
 document.getElementById('save').onclick = async () => {
   const btn = document.getElementById('save');
+  const saveNode = btn.lastChild; // 文本节点（svg 之后）
   btn.disabled = true;
-  btn.textContent = '导出中…';
-  copyBar.hidden = true;
+  saveNode.textContent = ' 导出中…';
+  pathRow.hidden = true;
   exportPath = null;
   try {
     const sessionId = currentSession.meta?.session_id ?? currentSession.session_id;
@@ -118,20 +177,22 @@ document.getElementById('save').onclick = async () => {
     inventory.meta = { ...currentSession.meta, session_id: sessionId, exported_at: new Date().toISOString() };
     try { await saveScan(inventory); } catch { /* 快照持久化失败不阻塞导出 */ }
     const res = await chrome.runtime.sendMessage({ type: 'DOWNLOAD_EXPORT', inventory });
-    if (!res?.ok) { status.textContent = `❌ 导出失败：${res?.error ?? '未知错误'}`; return; }
+    if (!res?.ok) { setStatus('err', '导出失败：' + (res?.error ?? '未知错误')); return; }
     if (res.absolute_path) {
       exportPath = res.absolute_path;
-      copyBar.hidden = false;
-      status.textContent = `✅ 已导出（selected 已写回清单）\n${res.absolute_path}\n在 Comate 中 @ 该文件生成用例`;
+      pathText.textContent = res.absolute_path;
+      pathRow.hidden = false;
+      setStatus('ok', '已导出（selected 已写回清单）', '在 Comate 中 @ 该文件生成用例');
     } else {
-      status.textContent = `⚠️ 已导出（未解析到落盘绝对路径）\n${res.path}\n在 Comate 中 @ 该文件生成用例`;
+      setStatus('warn', '已导出（未解析到落盘绝对路径）', res.path);
     }
     showView('scan');
   } finally {
     btn.disabled = false;
-    btn.textContent = '保存并导出';
+    saveNode.textContent = ' 保存并导出';
   }
 };
 
 // 初始化视图
+initialStatus();
 showView('scan');
