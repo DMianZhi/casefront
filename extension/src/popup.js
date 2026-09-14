@@ -25,7 +25,7 @@ function showView(which) {
 
 // ---- 状态区：内联 SVG 图标 + 主文案 + 副文案 ----
 const ICONS = {
-  idle: '<svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 11.2a2.6 2.6 0 0 1 0 5.2zM12 7.5v.2"/></svg>',
+  idle: '<svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 11.3v4.9"/><circle cx="12" cy="7.9" r="1.1" fill="var(--text-3)" stroke="none"/></svg>',
   load: '<svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M12 7.5v4.5l3 2.5"/></svg>',
   ok: '<svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="m8.4 12.4 2.4 2.4 4.8-5.2"/></svg>',
   err: '<svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 8v5M12 15.8v.2"/></svg>',
