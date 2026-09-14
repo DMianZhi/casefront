@@ -3,7 +3,7 @@ import { denoise } from './denoiser.js';
 import { classify, splitByConfidence } from './classifier.js';
 import { buildInventory } from './exporter.js';
 import { foldGroups } from './fold-groups.js';
-import { applySelections, reconcileElements, saveScan, loadScan } from './selection.js';
+import { applySelections, reconcileElements, saveScan, loadScan, saveDirHandle, getDirHandle, writeInventoryToDir } from './selection.js';
 
 const DEBUGGER_PROTO = '1.3';
 let lastInventory = null; // M1：最近一次扫描快照（内存层；持久层在 IndexedDB）
@@ -18,6 +18,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === 'GET_LAST_SCAN') {
     sendResponse({ ok: true, inventory: lastInventory });
     return false;
+  }
+  if (msg?.type === 'GET_DIR_STATUS') {
+    getDirHandle().then(h => sendResponse({ ok: true, ...h, handle: h.handle ? true : false, permission: h.permission }))
+      .catch(e => sendResponse({ ok: false, error: String(e?.message ?? e) }));
+    return true;
+  }
+  if (msg?.type === 'SAVE_DIR_HANDLE') {
+    saveDirHandle(msg.handle).then(() => sendResponse({ ok: true }))
+      .catch(e => sendResponse({ ok: false, error: String(e?.message ?? e) }));
+    return true;
   }
   if (msg?.type === 'APPLY_AND_EXPORT') {
     applyAndExport(msg.session_id, msg.selections ?? {})
