@@ -1,5 +1,26 @@
-<!doctype html><meta charset="utf-8"><title>CaseFront</title>
-<style>body{font:13px/1.6 system-ui;width:260px;padding:10px}
-#status{margin-top:8px;color:#666;white-space:pre-wrap}</style>
-<button id="scan">扫描此页</button><div id="status">点击按钮开始采集</div>
-<script src="popup.js"></script>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body { width: 320px; font: 13px/1.6 system-ui, sans-serif; margin: 10px; }
+    .row { margin: 8px 0; }
+    button { padding: 6px 14px; cursor: pointer; }
+    #mode { margin-right: 6px; }
+    #status { white-space: pre-wrap; }
+    .hint { color: #888; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h3>casefront</h3>
+  <div class="row">
+    <select id="mode">
+      <option value="compact" selected>精简（同类折叠）</option>
+      <option value="full">完整（全量）</option>
+    </select>
+    <button id="scan">扫描此页</button>
+  </div>
+  <div id="status" class="row">就绪</div>
+  <div class="hint">精简模式会将 5 个以上同名/同尾类元素折叠为一组；完整模式全量导出。</div>
+</body>
+</html>

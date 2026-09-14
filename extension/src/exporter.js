@@ -1,5 +1,9 @@
 export function buildInventory({ meta, sure, review, unclassified }) {
-  const elements = [...sure, ...review].map((c, i) => ({
+  const elements = [...sure, ...review].map((c, i) => {
+  const group = c.__group
+    ? { kind: c.__group.kind, signature: c.__group.signature, member_count: c.__group.member_count ?? c.__group.memberCount ?? 1 }
+    : undefined;
+  return {
     id: `e${String(i + 1).padStart(3, '0')}`,
     interaction_type: c.interaction_type,
     label: c.name ?? '',
@@ -8,8 +12,10 @@ export function buildInventory({ meta, sure, review, unclassified }) {
     visibility: c.visible === false ? 'hidden' : 'visible',
     confidence: c.confidence,
     selected: true,
-    notes: '',
-  }));
+    ...(group ? { group } : {}),
+    notes: group ? `同类折叠：${group.member_count} 个同名近似元素合并由此代表` : '',
+  };
+  });
   return {
     schema_version: '0.1',
     meta: { ...meta, captured_at: new Date().toISOString() },
