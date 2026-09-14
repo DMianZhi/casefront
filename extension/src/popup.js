@@ -78,6 +78,27 @@ document.getElementById('none').onclick = () => {
   renderList();
 };
 
+// ---- M1 Task 5：工作区目录授权与直写 ----
+const dirBtn = document.getElementById('dir');
+const dirStatus = document.getElementById('dir-status');
+
+async function refreshDirStatus() {
+  const st = await chrome.runtime.sendMessage({ type: 'GET_DIR_STATUS' });
+  dirStatus.textContent = !st?.ok || !st.handle
+    ? '未授权（导出走下载兜底）'
+    : st.permission === 'granted' ? '✅ 已授权，导出直写 workspace/inventory/' : '⏸ 需重新授权';
+}
+dirBtn.onclick = async () => {
+  try {
+    const handle = await showDirectoryPicker({ mode: 'readwrite' }); // 必须用户手势
+    await chrome.runtime.sendMessage({ type: 'SAVE_DIR_HANDLE', handle });
+    dirStatus.textContent = '✅ 已授权，导出直写 workspace/inventory/';
+  } catch (e) {
+    if (e.name !== 'AbortError') dirStatus.textContent = '授权失败：' + e.message;
+  }
+};
+refreshDirStatus();
+
 document.getElementById('save').onclick = async () => {
   // 未被触碰的元素保持后端默认（继承 last_selections）
   const btn = document.getElementById('save');
@@ -90,7 +111,8 @@ document.getElementById('save').onclick = async () => {
       selections: Object.fromEntries(pending),
     });
     if (!res.ok) { status.textContent = `❌ ${res.error}`; return; }
-    status.textContent = `✅ 已导出（selected 已写回清单）\n${res.path}\n在 Comate 中 @ 该文件生成用例`;
+    const via = res.via === 'dir' ? '已直写工作区' : '已下载（未授权目录直写，走下载兜底）';
+    status.textContent = `✅ ${via}（selected 已写回清单）\n${res.path}\n在 Comate 中 @ 该文件生成用例`;
     showView('scan');
   } finally {
     btn.disabled = false;
