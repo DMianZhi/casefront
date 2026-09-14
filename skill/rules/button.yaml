@@ -1,0 +1,12 @@
+id: button-standard
+applies_to: button
+rules:
+  - id: click-response
+    title: 单击响应与结果反馈
+    priority: P0
+  - id: double-click-guard
+    title: 连续快速点击/防重复提交
+    priority: P1
+  - id: loading-state
+    title: 请求进行中按钮状态（loading/禁用）
+    priority: P2

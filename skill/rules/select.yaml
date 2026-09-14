@@ -1,0 +1,12 @@
+id: select-standard
+applies_to: select
+rules:
+  - id: default-value
+    title: 默认值校验
+    priority: P1
+  - id: option-roundtrip
+    title: 选项往返（选后改选其他项）
+    priority: P2
+  - id: filter-reflow
+    title: 带搜索/筛选的下拉在输入后选项集是否正确
+    priority: P2
