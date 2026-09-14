@@ -1,0 +1,13 @@
+# Node
+node_modules/
+dist/
+*.log
+
+# 环境与临时
+.env
+.DS_Store
+Thumbs.db
+
+# 运行时产物（采集/生成物按目录契约落 workspace，不入库）
+inventory/
+cases/
