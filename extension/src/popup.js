@@ -107,7 +107,7 @@ document.getElementById('save').onclick = async () => {
   try {
     const res = await chrome.runtime.sendMessage({
       type: 'APPLY_AND_EXPORT',
-      session_id: currentSession.session_id,
+      session_id: currentSession.meta?.session_id ?? currentSession.session_id,
       selections: Object.fromEntries(pending),
     });
     if (!res.ok) { status.textContent = `❌ ${res.error}`; return; }

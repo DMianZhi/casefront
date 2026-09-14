@@ -138,9 +138,11 @@ async function enrich(candidate, send) {
 
 // M1：应用 popup 勾选并导出（所选快照 → selected 写回 → 目录直写/下载兜底）
 async function applyAndExport(sessionId, selections) {
-  const snap = lastInventory?.meta?.session_id === sessionId
+  const sid = sessionId ?? lastInventory?.meta?.session_id ?? null;
+  if (sid == null) throw new Error('未找到扫描快照，请先扫描此页');
+  const snap = lastInventory?.meta?.session_id === sid
     ? lastInventory
-    : await loadScan(sessionId);
+    : await loadScan(sid);
   if (!snap?.elements?.length) throw new Error('未找到扫描快照，请先扫描此页');
   const elements = applySelections(snap.elements, selections ?? {});
   const inventory = { ...snap, elements };
