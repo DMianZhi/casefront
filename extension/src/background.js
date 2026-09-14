@@ -3,16 +3,29 @@ import { denoise } from './denoiser.js';
 import { classify, splitByConfidence } from './classifier.js';
 import { buildInventory } from './exporter.js';
 import { foldGroups } from './fold-groups.js';
+import { applySelections, reconcileElements, saveScan, loadScan } from './selection.js';
 
 const DEBUGGER_PROTO = '1.3';
+let lastInventory = null; // M1：最近一次扫描快照（内存层；持久层在 IndexedDB）
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === 'SCAN') {
     scanActiveTab(msg.mode === 'full' ? 'full' : 'compact')
       .then(sendResponse)
       .catch(e => sendResponse({ ok: false, error: String(e?.message ?? e) }));
+    return true; // 异步 sendResponse
   }
-  return true; // 异步 sendResponse
+  if (msg?.type === 'GET_LAST_SCAN') {
+    sendResponse({ ok: true, inventory: lastInventory });
+    return false;
+  }
+  if (msg?.type === 'APPLY_AND_EXPORT') {
+    applyAndExport(msg.session_id, msg.selections ?? {})
+      .then(sendResponse)
+      .catch(e => sendResponse({ ok: false, error: String(e?.message ?? e) }));
+    return true;
+  }
+  return false;
 });
 
 async function scanActiveTab(mode = 'compact') {
@@ -55,7 +68,15 @@ async function scanActiveTab(mode = 'compact') {
       },
       sure, review, unclassified,
     });
-    // 5) M0 出口：下载 inventory.json；目录直写在 Task 5/6 接入
+    // 4.5) M1：同名会话重扫时继承上次勾选（reconcile），快照落 IndexedDB
+    let prev = null;
+    try { prev = await loadScan(inventory.meta.session_id); } catch { /* IDB 不可用不阻塞 */ }
+    if (prev?.elements?.length) {
+      inventory.elements = reconcileElements(inventory.elements, prev.elements);
+    }
+    try { await saveScan({ ...inventory, session_id: inventory.meta.session_id }); } catch { /* 持久化失败不阻塞导出 */ }
+    lastInventory = inventory;
+    // 5) M0 出口：下载 inventory.json
     // MV3 SW 无 URL.createObjectURL（Blob URL 不可用），改用 data URL
     const body = JSON.stringify(inventory, null, 2);
     const url = `data:application/json;charset=utf-8,${encodeURIComponent(body)}`;
@@ -109,7 +130,7 @@ async function enrich(candidate, send) {
       out.visible = d.rect_visible !== false;
     }
   } catch { /* 补属性失败不阻塞：诚实降级为无约束 */ }
-  out.backendDOMNodeId = candidate.backendDOMNodeId ?? `alt-${++resolveSeq}`;
+  out.backendDOMNodeId = candidate.backendDOMNodeId ?? `alt-${++enrichSeq}`;
   return out;
 }
 

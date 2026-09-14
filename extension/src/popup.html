@@ -3,24 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <style>
-    body { width: 320px; font: 13px/1.6 system-ui, sans-serif; margin: 10px; }
-    .row { margin: 8px 0; }
-    button { padding: 6px 14px; cursor: pointer; }
-    #mode { margin-right: 6px; }
+    body { width: 360px; font: 13px/1.6 system-ui, sans-serif; margin: 10px; }
+    .row { margin: 8px 0; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    button { padding: 5px 12px; cursor: pointer; }
+    #mode { flex: 1; }
     #status { white-space: pre-wrap; }
     .hint { color: #888; font-size: 12px; }
+    ul { list-style: none; margin: 4px 0; padding: 0 0 0 2px; max-height: 260px; overflow-y: auto; }
+    li { padding: 2px 0; border-bottom: 1px dashed #eee; display: flex; gap: 6px; align-items: flex-start; }
+    li label { flex: 1; word-break: break-all; }
+    .grp { color: #0a7; font-size: 11px; }
+    .view { display: none; }
+    .view.active { display: block; }
+    .top { display: flex; gap: 8px; align-items: center; }
+    .top h3 { margin: 0; flex: 1; }
+    .back { font-size: 12px; }
   </style>
 </head>
 <body>
-  <h3>casefront</h3>
-  <div class="row">
-    <select id="mode">
-      <option value="compact" selected>精简（同类折叠）</option>
-      <option value="full">完整（全量）</option>
-    </select>
-    <button id="scan">扫描此页</button>
+  <!-- 视图 1：采集 -->
+  <div id="view-scan" class="view">
+    <h3>casefront</h3>
+    <div class="row">
+      <select id="mode">
+        <option value="compact" selected>精简（同类折叠）</option>
+        <option value="full">完整（全量）</option>
+      </select>
+      <button id="scan">扫描此页</button>
+    </div>
+    <div id="status" class="row">就绪</div>
+    <div class="hint">精简模式：5 个以上同类元素折叠为一组；完整模式全量导出。<br>扫描后可进入「勾选元素」按需收缩用例范围。</div>
   </div>
-  <div id="status" class="row">就绪</div>
-  <div class="hint">精简模式会将 5 个以上同名/同尾类元素折叠为一组；完整模式全量导出。</div>
+
+  <!-- 视图 2：勾选 -->
+  <div id="view-review" class="view">
+    <div class="top">
+      <button id="back" class="back">← 重扫</button>
+      <h3>勾选纳入用例生成的元素</h3>
+    </div>
+    <div class="row">
+      <button id="all">全选</button>
+      <button id="none">全不选</button>
+      <button id="save">保存并导出</button>
+    </div>
+    <div id="sel-count" class="hint">已选 0 / 0</div>
+    <ul id="list"></ul>
+  </div>
+
+  <script type="module" src="popup.js"></script>
 </body>
 </html>
