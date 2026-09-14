@@ -106,12 +106,19 @@ export async function getDirHandle() {
 }
 
 // 直写 inventory.json 到已授权目录 workspace/inventory/<session>/
-// 【必须】在 popup（window 上下文）调用：createWritable 仅 window 可用，SW 无此 API
-// 成功返回相对路径；未授权/权限过期/写入失败抛错（调用方决定兜底），不再静默吞错
+// 【必须】在 popup（window 上下文）调用：createWritable 与 requestPermission 仅 window 可用，SW 无此 API
+// 权限机制：从 IDB 回读的句柄跨 popup 生命周期后 queryPermission 常回落 'prompt'——
+// 需要在用户手势（导出点击）下调 requestPermission 就地恢复，而非报「过期」
 export async function writeInventoryToDir(inventory) {
   const { handle: dir, permission } = await getDirHandle();
   if (!dir) throw new Error('尚未授权工作区目录（请点「授权目录」）');
-  if (permission !== 'granted') throw new Error('授权已过期，请重新授权目录');
+  let perm = permission;
+  if (perm !== 'granted') {
+    try {
+      perm = (await dir.requestPermission({ mode: 'readwrite' })) ?? perm;
+    } catch { /* 无用户手势时 requestPermission 抛错：保留原状态走下方校验 */ }
+  }
+  if (perm !== 'granted') throw new Error('未获得目录读写授权：请点「授权目录」后重试（弹窗选同一目录即可恢复）');
   const sessionDir = await dir
     .getDirectoryHandle('workspace', { create: true })
     .then(w => w.getDirectoryHandle('inventory', { create: true }))
