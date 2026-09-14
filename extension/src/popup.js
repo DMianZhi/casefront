@@ -86,8 +86,12 @@ function renderList() {
     if (el.group) {
       const g = document.createElement('span');
       g.className = 'tag g';
-      g.textContent = `×${el.group.member_count}`;
       g.title = `同类折叠组：${el.group.signature}`;
+      const n = Number(el.group.member_count) || 0;
+      // × 用内联 SVG 十字绘制（U+00D7 在小号等宽字体下字形矮扁）
+      g.innerHTML = '<svg viewBox="0 0 10 10" aria-hidden="true">'
+        + '<path d="M2.2 2.2l5.6 5.6M7.8 2.2l-5.6 5.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+        + '</svg><b>' + n + '</b>';
       meta.appendChild(g);
     }
     main.appendChild(name);
