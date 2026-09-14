@@ -1,0 +1,14 @@
+{
+  "nodes": [
+    { "nodeId": 1, "role": { "type": "role", "value": "RootWebArea" }, "name": { "value": "注册页" }, "childIds": [2, 3, 4, 5, 6, 7, 8, 9] },
+    { "nodeId": 2, "backendDOMNodeId": 101, "role": { "type": "role", "value": "textbox" }, "name": { "value": "手机号" }, "ignored": false, "properties": [{ "name": "required", "value": { "type": "boolean", "value": true } }], "childIds": [] },
+    { "nodeId": 3, "backendDOMNodeId": 102, "role": { "type": "role", "value": "textbox" }, "name": { "value": "密码" }, "ignored": false, "properties": [], "childIds": [] },
+    { "nodeId": 4, "backendDOMNodeId": 103, "role": { "type": "role", "value": "textbox" }, "name": { "value": "", "type": "computedString" }, "ignored": true, "properties": [], "childIds": [] },
+    { "nodeId": 5, "backendDOMNodeId": 104, "role": { "type": "role", "value": "combobox" }, "name": { "value": "账号类型" }, "ignored": false, "properties": [{ "name": "haspopup", "value": { "type": "token", "value": "listbox" } }], "childIds": [] },
+    { "nodeId": 6, "backendDOMNodeId": 105, "role": { "type": "role", "value": "checkbox" }, "name": { "value": "我已阅读并同意用户协议" }, "ignored": false, "properties": [], "childIds": [] },
+    { "nodeId": 7, "backendDOMNodeId": 106, "role": { "type": "role", "value": "button" }, "name": { "value": "注 册" }, "ignored": false, "properties": [], "childIds": [] },
+    { "nodeId": 8, "backendDOMNodeId": 107, "role": { "type": "role", "value": "link" }, "name": { "value": "已有账号？去登录" }, "ignored": false, "properties": [], "childIds": [] },
+    { "nodeId": 9, "backendDOMNodeId": 108, "role": { "type": "role", "value": "image" }, "name": { "value": "banner" }, "ignored": false, "properties": [], "childIds": [] },
+    { "nodeId": 10, "backendDOMNodeId": 109, "role": { "type": "role", "value": "genericContainer" }, "name": { "value": "" }, "ignored": true, "properties": [], "childIds": [2] }
+  ]
+}
