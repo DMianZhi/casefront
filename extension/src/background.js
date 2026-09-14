@@ -3,7 +3,7 @@ import { denoise } from './denoiser.js';
 import { classify, splitByConfidence } from './classifier.js';
 import { buildInventory } from './exporter.js';
 import { foldGroups } from './fold-groups.js';
-import { reconcileElements, saveScan, saveDirHandle, getDirHandle } from './selection.js';
+import { reconcileElements, saveScan } from './selection.js';
 
 const DEBUGGER_PROTO = '1.3';
 let lastInventory = null; // M1：最近一次扫描快照（内存层；持久层在 IndexedDB）
@@ -18,16 +18,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === 'GET_LAST_SCAN') {
     sendResponse({ ok: true, inventory: lastInventory });
     return false;
-  }
-  if (msg?.type === 'GET_DIR_STATUS') {
-    getDirHandle().then(h => sendResponse({ ok: true, ...h, handle: h.handle ? true : false, permission: h.permission }))
-      .catch(e => sendResponse({ ok: false, error: String(e?.message ?? e) }));
-    return true;
-  }
-  if (msg?.type === 'SAVE_DIR_HANDLE') {
-    saveDirHandle(msg.handle).then(() => sendResponse({ ok: true }))
-      .catch(e => sendResponse({ ok: false, error: String(e?.message ?? e) }));
-    return true;
   }
   if (msg?.type === 'DOWNLOAD_EXPORT') {
     downloadExport(msg.inventory)
@@ -136,22 +126,38 @@ async function enrich(candidate, send) {
   return out;
 }
 
-// M1.1：下载兜底（popup 直写失败或未授权时调用；data URL 因 MV3 SW 无 createObjectURL）
+// 唯一导出路径：浏览器下载（SW 侧；data URL 因 MV3 SW 无 createObjectURL）
+// 下载完成后用 downloads.search 回查真实落盘绝对路径，回传 popup 供「复制路径」使用
 async function downloadExport(inventory) {
   if (!inventory?.meta?.session_id) throw new Error('清单缺少 session_id，无法导出');
   const body = JSON.stringify(inventory, null, 2);
   const url = `data:application/json;charset=utf-8,${encodeURIComponent(body)}`;
-  await chrome.downloads.download({
+  const downloadId = await chrome.downloads.download({
     url,
     filename: `casefront/${inventory.meta.session_id}/inventory.json`,
     saveAs: false,
   });
+  const abs = await resolveDownloadPath(downloadId).catch(() => null);
   return {
     ok: true,
     via: 'download',
-    path: `下载/casefront/${inventory.meta.session_id}/inventory.json`,
+    path: abs ?? `浏览器下载目录/casefront/${inventory.meta.session_id}/inventory.json`,
+    absolute_path: abs, // null 时 popup 展示相对描述，不启用复制按钮
     count: inventory.elements?.length ?? 0,
   };
+}
+
+async function resolveDownloadPath(downloadId, timeoutMs = 8000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    await new Promise(r => setTimeout(r, 250));
+    const items = await chrome.downloads.search({ id: downloadId });
+    if (!items?.length) return null;
+    const it = items[0];
+    if (it.state === 'complete' && it.filename) return it.filename;
+    if (it.error && it.error !== 'IN_PROGRESS') throw new Error(`下载失败：${it.error}`);
+  }
+  return null; // 超时未完成：回传 null，UI 走相对路径文案
 }
 
 function makeSessionId(tab) {

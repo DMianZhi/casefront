@@ -106,8 +106,7 @@
       color: var(--text);
     }
     .hint { color: var(--text-2); font-size: 12px; }
-    .dir-row { margin-top: 10px; }
-    #dir-status { flex: 1; min-width: 0; }
+    .row[hidden] { display: none; }
     ul#list {
       list-style: none;
       margin: 10px 0 0;
@@ -179,15 +178,13 @@
       <div class="row">
         <div id="status">就绪</div>
       </div>
-    </div>
-    <div class="card dir-row">
-      <div class="row">
-        <button id="dir" class="secondary">授权目录</button>
-        <span id="dir-status" class="hint">未授权（导出走下载兜底）</span>
+      <div class="row" id="copy-bar" hidden>
+        <button id="copy-path" class="secondary block">📋 复制路径</button>
       </div>
-      <div class="hint" style="margin-top: 8px;">
-        精简模式：5 个以上同类元素折叠为一组；完整模式全量导出。<br>
-        扫描后可进入「勾选元素」按需收缩用例范围。
+    </div>
+    <div class="card">
+      <div class="hint">
+        精简模式：5 个以上同类元素折叠为一组；完整模式全量导出。扫描后可勾选按需收缩用例范围。
       </div>
     </div>
   </div>

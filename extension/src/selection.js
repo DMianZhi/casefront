@@ -1,4 +1,4 @@
-// M1 Task 4/5：勾选合并（纯函数）+ IndexedDB 薄封装（扫描快照 + 工作区目录句柄）+ 目录直写
+// M1：勾选合并（纯函数）+ IndexedDB 薄封装（扫描快照持久层）
 // 契约：selections 是 Record<elementId, boolean>（或 Map）；写回 inventory.elements[].selected
 // 原则：未出现在 selections 里的元素保持原值（默认 true）
 
@@ -36,9 +36,8 @@ export function reconcileElements(next, prev) {
 
 // ---- IndexedDB 薄封装（popup 与 SW 同源共享同一个库）----
 const DB_NAME = 'casefront';
-const DB_VERSION = 2;
+const DB_VERSION = 2; // 目录句柄存储已废弃；库结构维持 v2 不再升级，旧库残留的空 store 无害
 const STORE_SCANS = 'scans'; // keyPath: session_id
-const STORE_HANDLES = 'handles'; // key：'export_dir'
 
 function openDb() {
   return new Promise((resolve, reject) => {
@@ -47,9 +46,6 @@ function openDb() {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE_SCANS)) {
         db.createObjectStore(STORE_SCANS, { keyPath: 'session_id' });
-      }
-      if (!db.objectStoreNames.contains(STORE_HANDLES)) {
-        db.createObjectStore(STORE_HANDLES);
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -77,55 +73,3 @@ export async function loadScan(sessionId) {
   });
 }
 
-// ---- 工作区目录句柄（File System Access API）----
-// 注意：showDirectoryPicker 只在 window 上下文（popup）可用，由 popup 调用后把句柄存进来；
-// 句柄可结构化克隆，IndexedDB 里能安全持久化，SW 侧读取使用。
-
-export async function saveDirHandle(handle) {
-  const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_HANDLES, 'readwrite');
-    tx.objectStore(STORE_HANDLES).put(handle, 'export_dir');
-    tx.oncomplete = () => resolve(true);
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-// 读取目录句柄；顺带返回授权状态（granted 静默可写；prompt 需用户手势再授权）
-export async function getDirHandle() {
-  const db = await openDb();
-  const handle = await new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_HANDLES, 'readonly');
-    const req = tx.objectStore(STORE_HANDLES).get('export_dir');
-    req.onsuccess = () => resolve(req.result ?? null);
-    req.onerror = () => reject(req.error);
-  });
-  if (!handle) return { handle: null, permission: 'unavailable' };
-  const permission = (await handle.queryPermission?.({ mode: 'readwrite' })) ?? 'prompt';
-  return { handle, permission };
-}
-
-// 直写 inventory.json 到已授权目录 workspace/inventory/<session>/
-// 【必须】在 popup（window 上下文）调用：createWritable 与 requestPermission 仅 window 可用，SW 无此 API
-// 权限机制：从 IDB 回读的句柄跨 popup 生命周期后 queryPermission 常回落 'prompt'——
-// 需要在用户手势（导出点击）下调 requestPermission 就地恢复，而非报「过期」
-export async function writeInventoryToDir(inventory) {
-  const { handle: dir, permission } = await getDirHandle();
-  if (!dir) throw new Error('尚未授权工作区目录（请点「授权目录」）');
-  let perm = permission;
-  if (perm !== 'granted') {
-    try {
-      perm = (await dir.requestPermission({ mode: 'readwrite' })) ?? perm;
-    } catch { /* 无用户手势时 requestPermission 抛错：保留原状态走下方校验 */ }
-  }
-  if (perm !== 'granted') throw new Error('未获得目录读写授权：请点「授权目录」后重试（弹窗选同一目录即可恢复）');
-  const sessionDir = await dir
-    .getDirectoryHandle('workspace', { create: true })
-    .then(w => w.getDirectoryHandle('inventory', { create: true }))
-    .then(i => i.getDirectoryHandle(inventory.meta.session_id, { create: true }));
-  const file = await sessionDir.getFileHandle('inventory.json', { create: true });
-  const w = await file.createWritable();
-  await w.write(JSON.stringify(inventory, null, 2));
-  await w.close();
-  return `workspace/inventory/${inventory.meta.session_id}/inventory.json`;
-}

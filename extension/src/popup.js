@@ -1,4 +1,4 @@
-import { applySelections, saveScan, writeInventoryToDir } from './selection.js';
+import { applySelections, saveScan } from './selection.js';
 
 const status = document.getElementById('status');
 const modeEl = document.getElementById('mode');
@@ -80,48 +80,51 @@ document.getElementById('none').onclick = () => {
   renderList();
 };
 
-// ---- M1 Task 5：工作区目录授权与直写 ----
-const dirBtn = document.getElementById('dir');
-const dirStatus = document.getElementById('dir-status');
+// ---- 导出路径一键复制（下载落盘绝对路径 → 剪贴板，Comate 里 @ 直接粘）----
+let exportPath = null;
+const copyBar = document.getElementById('copy-bar');
+const copyBtn = document.getElementById('copy-path');
 
-async function refreshDirStatus() {
-  const st = await chrome.runtime.sendMessage({ type: 'GET_DIR_STATUS' });
-  dirStatus.textContent = !st?.ok || !st.handle
-    ? '未授权（导出走下载兜底）'
-    : st.permission === 'granted' ? '✅ 已授权，导出直写 workspace/inventory/' : '⏸ 需重新授权';
-}
-dirBtn.onclick = async () => {
+copyBtn.onclick = async () => {
+  if (!exportPath) return;
+  let ok = false;
   try {
-    const handle = await showDirectoryPicker({ mode: 'readwrite' }); // 必须用户手势
-    await chrome.runtime.sendMessage({ type: 'SAVE_DIR_HANDLE', handle });
-    dirStatus.textContent = '✅ 已授权，导出直写 workspace/inventory/';
-  } catch (e) {
-    if (e.name !== 'AbortError') dirStatus.textContent = '授权失败：' + e.message;
+    await navigator.clipboard.writeText(exportPath);
+    ok = true;
+  } catch {
+    // 剪贴板 API 不可用时回落 execCommand
+    const ta = document.createElement('textarea');
+    ta.value = exportPath;
+    ta.hidden = true;
+    document.body.appendChild(ta);
+    ta.select();
+    try { ok = document.execCommand('copy'); } catch { /* 忽略 */ }
+    ta.remove();
   }
+  copyBtn.textContent = ok ? '✅ 已复制' : '❌ 复制失败';
+  setTimeout(() => { copyBtn.textContent = '📋 复制路径'; }, 1500);
 };
-refreshDirStatus();
 
 document.getElementById('save').onclick = async () => {
-  // 导出在弹窗（window 上下文）执行：勾选合并 + 快照持久化 + 目录直写，均用 window 侧能力
   const btn = document.getElementById('save');
   btn.disabled = true;
   btn.textContent = '导出中…';
+  copyBar.hidden = true;
+  exportPath = null;
   try {
     const sessionId = currentSession.meta?.session_id ?? currentSession.session_id;
     const elements = applySelections(currentSession.elements, Object.fromEntries(pending));
     const inventory = { ...currentSession, elements, session_id: sessionId };
     inventory.meta = { ...currentSession.meta, session_id: sessionId, exported_at: new Date().toISOString() };
     try { await saveScan(inventory); } catch { /* 快照持久化失败不阻塞导出 */ }
-    let path = null;
-    let dirErr = null;
-    try { path = await writeInventoryToDir(inventory); }
-    catch (e) { dirErr = e?.message ?? String(e); }
-    if (path) {
-      status.textContent = `✅ 已直写工作区（selected 已写回清单）\n${path}\n在 Comate 中 @ 该文件生成用例`;
+    const res = await chrome.runtime.sendMessage({ type: 'DOWNLOAD_EXPORT', inventory });
+    if (!res?.ok) { status.textContent = `❌ 导出失败：${res?.error ?? '未知错误'}`; return; }
+    if (res.absolute_path) {
+      exportPath = res.absolute_path;
+      copyBar.hidden = false;
+      status.textContent = `✅ 已导出（selected 已写回清单）\n${res.absolute_path}\n在 Comate 中 @ 该文件生成用例`;
     } else {
-      const res = await chrome.runtime.sendMessage({ type: 'DOWNLOAD_EXPORT', inventory });
-      if (!res?.ok) { status.textContent = `❌ 导出失败：${res?.error ?? '未知错误'}`; return; }
-      status.textContent = `⚠️ 目录直写未成功${dirErr ? `（${dirErr}）` : ''}，已走下载兜底\n${res.path}\n在 Comate 中 @ 该文件生成用例`;
+      status.textContent = `⚠️ 已导出（未解析到落盘绝对路径）\n${res.path}\n在 Comate 中 @ 该文件生成用例`;
     }
     showView('scan');
   } finally {
