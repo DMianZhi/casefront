@@ -1,3 +1,5 @@
+import { applySelections, saveScan, writeInventoryToDir } from './selection.js';
+
 const status = document.getElementById('status');
 const modeEl = document.getElementById('mode');
 const viewScan = document.getElementById('view-scan');
@@ -100,19 +102,27 @@ dirBtn.onclick = async () => {
 refreshDirStatus();
 
 document.getElementById('save').onclick = async () => {
-  // 未被触碰的元素保持后端默认（继承 last_selections）
+  // 导出在弹窗（window 上下文）执行：勾选合并 + 快照持久化 + 目录直写，均用 window 侧能力
   const btn = document.getElementById('save');
   btn.disabled = true;
   btn.textContent = '导出中…';
   try {
-    const res = await chrome.runtime.sendMessage({
-      type: 'APPLY_AND_EXPORT',
-      session_id: currentSession.meta?.session_id ?? currentSession.session_id,
-      selections: Object.fromEntries(pending),
-    });
-    if (!res.ok) { status.textContent = `❌ ${res.error}`; return; }
-    const via = res.via === 'dir' ? '已直写工作区' : '已下载（未授权目录直写，走下载兜底）';
-    status.textContent = `✅ ${via}（selected 已写回清单）\n${res.path}\n在 Comate 中 @ 该文件生成用例`;
+    const sessionId = currentSession.meta?.session_id ?? currentSession.session_id;
+    const elements = applySelections(currentSession.elements, Object.fromEntries(pending));
+    const inventory = { ...currentSession, elements, session_id: sessionId };
+    inventory.meta = { ...currentSession.meta, session_id: sessionId, exported_at: new Date().toISOString() };
+    try { await saveScan(inventory); } catch { /* 快照持久化失败不阻塞导出 */ }
+    let path = null;
+    let dirErr = null;
+    try { path = await writeInventoryToDir(inventory); }
+    catch (e) { dirErr = e?.message ?? String(e); }
+    if (path) {
+      status.textContent = `✅ 已直写工作区（selected 已写回清单）\n${path}\n在 Comate 中 @ 该文件生成用例`;
+    } else {
+      const res = await chrome.runtime.sendMessage({ type: 'DOWNLOAD_EXPORT', inventory });
+      if (!res?.ok) { status.textContent = `❌ 导出失败：${res?.error ?? '未知错误'}`; return; }
+      status.textContent = `⚠️ 目录直写未成功${dirErr ? `（${dirErr}）` : ''}，已走下载兜底\n${res.path}\n在 Comate 中 @ 该文件生成用例`;
+    }
     showView('scan');
   } finally {
     btn.disabled = false;

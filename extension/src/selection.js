@@ -105,25 +105,20 @@ export async function getDirHandle() {
   return { handle, permission };
 }
 
-// 直写 inventory.json 到已授权目录 workspace/inventory/<session>/；
-// 返回相对路径；无句柄/权限失效/任何异常返回 null（调用方回退下载兜底）
+// 直写 inventory.json 到已授权目录 workspace/inventory/<session>/
+// 【必须】在 popup（window 上下文）调用：createWritable 仅 window 可用，SW 无此 API
+// 成功返回相对路径；未授权/权限过期/写入失败抛错（调用方决定兜底），不再静默吞错
 export async function writeInventoryToDir(inventory) {
-  try {
-    const { handle: dir, permission } = await getDirHandle();
-    if (!dir || permission !== 'granted') {
-      // prompt 状态下 SW 无法弹授权，交回 popup 用户手势处理
-      if (dir && (await dir.requestPermission?.({ mode: 'readwrite' })) !== 'granted') return null;
-    }
-    const sessionDir = await dir
-      .getDirectoryHandle('workspace', { create: true })
-      .then(w => w.getDirectoryHandle('inventory', { create: true }))
-      .then(i => i.getDirectoryHandle(inventory.meta.session_id, { create: true }));
-    const file = await sessionDir.getFileHandle('inventory.json', { create: true });
-    const w = await file.createWritable();
-    await w.write(JSON.stringify(inventory, null, 2));
-    await w.close();
-    return `workspace/inventory/${inventory.meta.session_id}/inventory.json`;
-  } catch {
-    return null; // 存疑不炸：回退下载兜底
-  }
+  const { handle: dir, permission } = await getDirHandle();
+  if (!dir) throw new Error('尚未授权工作区目录（请点「授权目录」）');
+  if (permission !== 'granted') throw new Error('授权已过期，请重新授权目录');
+  const sessionDir = await dir
+    .getDirectoryHandle('workspace', { create: true })
+    .then(w => w.getDirectoryHandle('inventory', { create: true }))
+    .then(i => i.getDirectoryHandle(inventory.meta.session_id, { create: true }));
+  const file = await sessionDir.getFileHandle('inventory.json', { create: true });
+  const w = await file.createWritable();
+  await w.write(JSON.stringify(inventory, null, 2));
+  await w.close();
+  return `workspace/inventory/${inventory.meta.session_id}/inventory.json`;
 }

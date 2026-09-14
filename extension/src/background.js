@@ -3,7 +3,7 @@ import { denoise } from './denoiser.js';
 import { classify, splitByConfidence } from './classifier.js';
 import { buildInventory } from './exporter.js';
 import { foldGroups } from './fold-groups.js';
-import { applySelections, reconcileElements, saveScan, loadScan, saveDirHandle, getDirHandle, writeInventoryToDir } from './selection.js';
+import { reconcileElements, saveScan, saveDirHandle, getDirHandle } from './selection.js';
 
 const DEBUGGER_PROTO = '1.3';
 let lastInventory = null; // M1：最近一次扫描快照（内存层；持久层在 IndexedDB）
@@ -29,8 +29,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       .catch(e => sendResponse({ ok: false, error: String(e?.message ?? e) }));
     return true;
   }
-  if (msg?.type === 'APPLY_AND_EXPORT') {
-    applyAndExport(msg.session_id, msg.selections ?? {})
+  if (msg?.type === 'DOWNLOAD_EXPORT') {
+    downloadExport(msg.inventory)
       .then(sendResponse)
       .catch(e => sendResponse({ ok: false, error: String(e?.message ?? e) }));
     return true;
@@ -136,37 +136,22 @@ async function enrich(candidate, send) {
   return out;
 }
 
-// M1：应用 popup 勾选并导出（所选快照 → selected 写回 → 目录直写/下载兜底）
-async function applyAndExport(sessionId, selections) {
-  const sid = sessionId ?? lastInventory?.meta?.session_id ?? null;
-  if (sid == null) throw new Error('未找到扫描快照，请先扫描此页');
-  const snap = lastInventory?.meta?.session_id === sid
-    ? lastInventory
-    : await loadScan(sid);
-  if (!snap?.elements?.length) throw new Error('未找到扫描快照，请先扫描此页');
-  const elements = applySelections(snap.elements, selections ?? {});
-  const inventory = { ...snap, elements };
-  inventory.meta = { ...snap.meta, exported_at: new Date().toISOString() };
-  lastInventory = inventory;
-  try { await saveScan({ ...inventory, session_id: inventory.meta.session_id }); } catch { /* 持久化失败不阻塞导出 */ }
-  let path = null;
-  let via = 'download';
-  try {
-    const dirPath = await writeInventoryToDir(inventory);
-    if (dirPath) { path = dirPath; via = 'dir'; }
-  } catch { /* 回退下载 */ }
-  if (!path) {
-    const body = JSON.stringify(inventory, null, 2);
-    const url = `data:application/json;charset=utf-8,${encodeURIComponent(body)}`;
-    await chrome.downloads.download({
-      url,
-      filename: `casefront/${inventory.meta.session_id}/inventory.json`,
-      saveAs: false,
-    });
-    path = `下载/casefront/${inventory.meta.session_id}/inventory.json`;
-  }
-  const selectedCount = elements.filter(e => e.selected !== false).length;
-  return { ok: true, path, via, count: elements.length, selected_count: selectedCount };
+// M1.1：下载兜底（popup 直写失败或未授权时调用；data URL 因 MV3 SW 无 createObjectURL）
+async function downloadExport(inventory) {
+  if (!inventory?.meta?.session_id) throw new Error('清单缺少 session_id，无法导出');
+  const body = JSON.stringify(inventory, null, 2);
+  const url = `data:application/json;charset=utf-8,${encodeURIComponent(body)}`;
+  await chrome.downloads.download({
+    url,
+    filename: `casefront/${inventory.meta.session_id}/inventory.json`,
+    saveAs: false,
+  });
+  return {
+    ok: true,
+    via: 'download',
+    path: `下载/casefront/${inventory.meta.session_id}/inventory.json`,
+    count: inventory.elements?.length ?? 0,
+  };
 }
 
 function makeSessionId(tab) {
