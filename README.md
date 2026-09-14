@@ -17,14 +17,32 @@ casefront/
   docs/superpowers/plans/  # 实现计划
 ```
 
-## 使用流程（M1）
+## 下载安装
 
-1. `chrome://extensions` → 开发者模式 → 加载已解压的扩展程序 → 选 `extension/`
-2. 打开目标页面 → 点插件「扫描此页」（此时只采集＋存快照，**不写文件**；精简模式默认折叠同类元素；完整模式出全量清单）
-3. 在勾选视图勾选要纳入用例生成的元素（新会话默认全选；同名会话重扫自动继承上次勾选）
-4. 点「保存并导出」→ 勾选结果 `selected` 写回清单 → 清单写入浏览器下载目录
-   `下载/casefront/<会话>/inventory.json`（popup 出现「复制路径」按钮，一键复制落盘绝对路径）
-5. 在 Comate 中 `@` 该文件，运行 casefront Skill 生成用例
+**方式 A：下载 Release 包（推荐同事使用）**
+
+1. 到 [Releases](https://github.com/DMianZhi/casefront/releases) 下载最新 `casefront-extension-vX.Y.Z.zip` 并解压
+2. Chrome 打开 `chrome://extensions` → 右上角开启「开发者模式」
+3. 「加载已解压的扩展程序」→ 选中解压出的 `extension/` 目录
+4. 工具栏钉住 CaseFront 图标即可使用
+
+**方式 B：克隆仓库（开发/最新代码）**
+
+```bash
+git clone https://github.com/DMianZhi/casefront.git
+cd casefront
+# chrome://extensions → 加载已解压的扩展程序 → 选 casefront/extension/
+```
+
+要求：Chromium 内核浏览器（Chrome / Edge）；扫描使用 `chrome.debugger` 权限，首次加载确认即可。
+
+## 使用流程
+
+1. 打开目标页面 → 点插件「扫描此页」（此时只采集＋存快照，**不写文件**；精简模式默认折叠同类元素；完整模式出全量清单）
+2. 在勾选视图勾选要纳入用例生成的元素（新会话默认全选；同名会话重扫自动继承上次勾选）
+3. 点「保存并导出」→ 清单自动下载到
+   `下载/casefront/<会话>/inventory.json`（popup 显示落盘绝对路径，「复制路径」一键复制）
+4. 在 Comate 中 `@` 该文件，运行 casefront Skill 生成用例
 
 > DevTools 冲突提示：Chrome 同一标签页只允许一个 debugger。开着 DevTools 时扫描会被占用，
 > 插件会提示先关闭 DevTools 再扫。
