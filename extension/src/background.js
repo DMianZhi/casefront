@@ -154,6 +154,37 @@ async function enrich(candidate, send) {
   return out;
 }
 
+// M1：应用 popup 勾选并导出（所选快照 → selected 写回 → 目录直写/下载兜底）
+async function applyAndExport(sessionId, selections) {
+  const snap = lastInventory?.meta?.session_id === sessionId
+    ? lastInventory
+    : await loadScan(sessionId);
+  if (!snap?.elements?.length) throw new Error('未找到扫描快照，请先扫描此页');
+  const elements = applySelections(snap.elements, selections ?? {});
+  const inventory = { ...snap, elements };
+  inventory.meta = { ...snap.meta, exported_at: new Date().toISOString() };
+  lastInventory = inventory;
+  try { await saveScan({ ...inventory, session_id: inventory.meta.session_id }); } catch { /* 持久化失败不阻塞导出 */ }
+  let path = null;
+  let via = 'download';
+  try {
+    const dirPath = await writeInventoryToDir(inventory);
+    if (dirPath) { path = dirPath; via = 'dir'; }
+  } catch { /* 回退下载 */ }
+  if (!path) {
+    const body = JSON.stringify(inventory, null, 2);
+    const url = `data:application/json;charset=utf-8,${encodeURIComponent(body)}`;
+    await chrome.downloads.download({
+      url,
+      filename: `casefront/${inventory.meta.session_id}/inventory.json`,
+      saveAs: false,
+    });
+    path = `下载/casefront/${inventory.meta.session_id}/inventory.json`;
+  }
+  const selectedCount = elements.filter(e => e.selected !== false).length;
+  return { ok: true, path, via, count: elements.length, selected_count: selectedCount };
+}
+
 function makeSessionId(tab) {
   const d = new Date();
   const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
