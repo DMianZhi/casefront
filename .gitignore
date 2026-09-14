@@ -11,3 +11,7 @@ Thumbs.db
 # 运行时产物（采集/生成物按目录契约落 workspace，不入库）
 inventory/
 cases/
+
+# 真机验收样本与一次性脚本含真实页面数据，不入库
+cases-fixture/e2e-samples/
+scripts/peer2/
