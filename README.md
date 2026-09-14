@@ -1,6 +1,6 @@
 # casefront — Web 测试用例 AI 前置助手
 
-浏览器插件（采集页面交互）+ Comate Skill（规则匹配 + 用例生成）。
+浏览器插件（采集页面交互）+ AI agent Skill（规则匹配 + 用例生成），两者只靠数据契约解耦，可搭配任意 AI 编码助手使用。
 
 - 浏览器插件负责"看清"页面：**CDP 直读 a11y tree**，产出结构化交互清单 `inventory.json`
 - Skill 负责"想好"：依据**规则卡**与测试者 demo 生成测试用例 `cases.md` / `cases.json`
@@ -11,7 +11,7 @@
 ```
 casefront/
   extension/               # 浏览器插件（CDP 采集、popup 勾选、下载导出）
-  skill/                   # Comate Skill（规则匹配、用例生成）+ 内置规则卡
+  skill/                   # 用例生成 Skill（SKILL.md + 内置规则卡），遵循 agentskills 规范
   demo/examples.md         # 测试者手写的风格样例（few-shot，可留空）
   docs/superpowers/specs/  # 设计文档
   docs/superpowers/plans/  # 实现计划
@@ -36,13 +36,24 @@ cd casefront
 
 要求：Chromium 内核浏览器（Chrome / Edge）；扫描使用 `chrome.debugger` 权限，首次加载确认即可。
 
+**Skill 安装（用例生成侧）**
+
+1. 到 [Releases](https://github.com/DMianZhi/casefront/releases) 下载 `casefront-skill-vX.Y.Z.zip`
+   并解压，得到 `casefront/` 目录（含 `SKILL.md` 与 `rules/` 内置规则卡）
+2. 放入你所用 AI 助手的技能目录：
+   - Comate：`~/.wpscomate/agent/skills/custom/casefront`
+   - Claude Code：`~/.claude/skills/casefront`
+   - 其他 agent：按其 skill 安装约定放置（SKILL.md 遵循 agentskills.io 规范，纯 Markdown + YAML，无平台绑定）
+3. 新会话中说「用 casefront 生成测试用例」或直接 `@ inventory.json` 触发
+
 ## 使用流程
 
 1. 打开目标页面 → 点插件「扫描此页」（此时只采集＋存快照，**不写文件**；精简模式默认折叠同类元素；完整模式出全量清单）
 2. 在勾选视图勾选要纳入用例生成的元素（新会话默认全选；同名会话重扫自动继承上次勾选）
 3. 点「保存并导出」→ 清单自动下载到
    `下载/casefront/<会话>/inventory.json`（popup 显示落盘绝对路径，「复制路径」一键复制）
-4. 在 Comate 中 `@` 该文件，运行 casefront Skill 生成用例
+4. 把 inventory.json 交给你的 AI 编码助手（Comate、Codex、Claude Code 等均可），
+   运行 casefront Skill 生成用例
 
 > DevTools 冲突提示：Chrome 同一标签页只允许一个 debugger。开着 DevTools 时扫描会被占用，
 > 插件会提示先关闭 DevTools 再扫。
