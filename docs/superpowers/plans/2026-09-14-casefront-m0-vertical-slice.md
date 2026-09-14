@@ -678,7 +678,7 @@ git commit -m "feat: MV3 manifest 与 popup，全链路可用"
 
 **Files:**
 - Create: `skill/SKILL.md`（覆盖骨架占位，写入完整生成管线指令）
-- Create: `skill/rules/text_input.yaml`、`skill/rules/select.yaml`、`skill/rules/button.yaml`、`skill/rules/file_upload.yaml`、`skill/rules/date_picker.yaml`
+- Create: `skill/references/rules/text_input.yaml`、`skill/references/rules/select.yaml`、`skill/references/rules/button.yaml`、`skill/references/rules/file_upload.yaml`、`skill/references/rules/date_picker.yaml`
 - Create: `demo/examples.md`（模板，用户后续填 2~3 条手写用例）
 - Test: 无自动化测试——M0 用 Task 9 E2E 走查验收
 
@@ -688,7 +688,7 @@ git commit -m "feat: MV3 manifest 与 popup，全链路可用"
 
 - [ ] **Step 1: 写 5 张规则卡**
 
-`skill/rules/text_input.yaml`:
+`skill/references/rules/text_input.yaml`:
 
 ```yaml
 id: text-input-standard
@@ -710,7 +710,7 @@ rules:
     priority: P1
 ```
 
-`skill/rules/select.yaml`:
+`skill/references/rules/select.yaml`:
 
 ```yaml
 id: select-standard
@@ -727,7 +727,7 @@ rules:
     priority: P2
 ```
 
-`skill/rules/button.yaml`:
+`skill/references/rules/button.yaml`:
 
 ```yaml
 id: button-standard
@@ -744,7 +744,7 @@ rules:
     priority: P2
 ```
 
-`skill/rules/file_upload.yaml`:
+`skill/references/rules/file_upload.yaml`:
 
 ```yaml
 id: file-upload-standard
@@ -761,7 +761,7 @@ rules:
     priority: P2
 ```
 
-`skill/rules/date_picker.yaml`:
+`skill/references/rules/date_picker.yaml`:
 
 ```yaml
 id: date-picker-standard
@@ -790,14 +790,14 @@ description: Web 测试用例 AI 前置助手。读取插件产出的 inventory.
 
 # CaseFront Skill —— 用例生成管线
 
-输入：`inventory.json`（插件产出，schema_version 0.1）+ `skill/rules/*.yaml` + `demo/examples.md`（可选）。
+输入：`inventory.json`（插件产出，schema_version 0.1）+ `skill/references/rules/*.yaml` + `demo/examples.md`（可选）。
 输出：同目录 `cases.json` + `cases.md`。
 
 ## 管线五步（演示页走完才能交付）
 
 1. **裁决**：列出 `confidence < 0.9` 的 elements 与全部 `unclassified`，逐条给出你判定的
    interaction_type 与理由；低信心项给用户确认（第一处人工收敛）。
-2. **匹配**：读 `skill/rules/` 全部 YAML，按 `applies_to == interaction_type` 挂卡；
+2. **匹配**：读 `skill/references/rules/` 全部 YAML，按 `applies_to == interaction_type` 挂卡；
    `selected=false` 的元素跳过并在 coverage.skipped_reasons 记录；若某 interaction_type 无卡，
    记入 `rule_gaps`。× （1 元素 × N 规则 = N 检查点，全部携带 rule id）
 3. **收敛二**：按「共性合并/个性独立」（见下）拟出检查点清单摘要 → 用户确认范围后继续
@@ -854,7 +854,7 @@ description: Web 测试用例 AI 前置助手。读取插件产出的 inventory.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add skill/SKILL.md skill/rules/ demo/examples.md
+git add skill/SKILL.md skill/references/rules/ demo/examples.md
 git commit -m "feat: Skill 生成管线指令与 5 张内置规则卡"
 ```
 
