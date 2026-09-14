@@ -86,29 +86,11 @@ async function scanActiveTab(mode = 'compact') {
     }
     try { await saveScan({ ...inventory, session_id: inventory.meta.session_id }); } catch { /* 持久化失败不阻塞导出 */ }
     lastInventory = inventory;
-    // 5) M1 出口：目录直写优先（授权过 workspace 目录），无句柄/权限失效回退下载兜底
-    let path = null;
-    let via = 'download';
-    try {
-      const dirPath = await writeInventoryToDir(inventory);
-      if (dirPath) { path = dirPath; via = 'dir'; }
-    } catch { /* 回退下载 */ }
-    if (!path) {
-      // MV3 SW 无 URL.createObjectURL（Blob URL 不可用），data URL 兜底
-      const body = JSON.stringify(inventory, null, 2);
-      const url = `data:application/json;charset=utf-8,${encodeURIComponent(body)}`;
-      const dlId = await chrome.downloads.download({
-        url,
-        filename: `casefront/${inventory.meta.session_id}/inventory.json`,
-        saveAs: false,
-      });
-      path = `下载/casefront/${inventory.meta.session_id}/inventory.json`;
-      var dlIdOut = dlId;
-    }
+    // 5) M1 修复：扫描只采集+落快照，不落盘——导出只发生在 popup「保存并导出」
+    //    （原 M0 遗留行为是扫描即导出，导致勾选 UI 被架空）
     return {
       ok: true,
-      path,
-      via,
+      session_id: inventory.meta.session_id,
       count: inventory.elements.length,      // 清单条目数（含折叠后的组代表）
       folded_groups: folded.groups.length,   // 折叠组数（popup 展示）
     };

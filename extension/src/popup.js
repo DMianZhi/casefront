@@ -56,7 +56,7 @@ document.getElementById('scan').onclick = async () => {
   catch (e) { status.textContent = '失败：' + e.message; return; }
   if (!res.ok) { status.textContent = `❌ ${res.error}`; return; }
   const foldInfo = res.folded_groups > 0 ? `\n同类折叠：${res.folded_groups} 组` : '';
-  status.textContent = `✅ 采集 ${res.count} 个交互元素${foldInfo}\n已下载：${res.path}\n点击下方进入勾选视图`;
+  status.textContent = `✅ 采集 ${res.count} 个交互元素${foldInfo}\n请勾选要纳入用例生成的元素，再点「保存并导出」`;
   // 拉取快照进入勾选视图
   const snap = await chrome.runtime.sendMessage({ type: 'GET_LAST_SCAN' });
   if (snap?.ok && snap.inventory) {
