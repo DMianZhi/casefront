@@ -1,0 +1,12 @@
+id: file-upload-standard
+applies_to: file_upload
+rules:
+  - id: type-magic-mismatch
+    title: 类型限制与魔数伪装（改后缀）
+    priority: P1
+  - id: size-limit
+    title: 大小边界（上限±1、0 字节）
+    priority: P1
+  - id: duplicate-name
+    title: 重名/重复上传
+    priority: P2

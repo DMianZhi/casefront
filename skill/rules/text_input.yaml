@@ -1,0 +1,17 @@
+id: text-input-standard
+applies_to: text_input
+rules:
+  - id: empty-submit
+    title: 空值提交
+    priority: P0
+  - id: boundary-min-max
+    title: 边界值测试
+    detail: 按 maxlength/minlength 取边界值及 ±1；无 maxlength 默认 255/256
+    priority: P1
+  - id: whitespace-trim
+    title: 前后空格处理
+    priority: P2
+  - id: xss-injection
+    title: 特殊字符与脚本注入
+    detail: `<img src=x onerror=alert(1)>` 等 payload，观察转义/告警
+    priority: P1

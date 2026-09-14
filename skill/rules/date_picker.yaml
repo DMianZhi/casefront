@@ -1,0 +1,12 @@
+id: date-picker-standard
+applies_to: date_picker
+rules:
+  - id: month-boundary
+    title: 跨月/跨年切换
+    priority: P1
+  - id: past-date
+    title: 过去日期（如业务禁止）
+    priority: P2
+  - id: range-order
+    title: 结束早于开始（区间选择）
+    priority: P1

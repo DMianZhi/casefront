@@ -1,0 +1,14 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>注册页</title></head>
+<body>
+<h1>注册</h1>
+<form id="reg">
+  <label>手机号<input id="phone" type="tel" required maxlength="11" placeholder="请输入11位手机号"></label>
+  <label>密码<input id="pwd" type="password" required maxlength="20"></label>
+  <label>账号类型<select id="acctype"><option>个人</option><option>企业</option></select></label>
+  <label><input type="checkbox" id="agree">我已阅读并同意用户协议</label>
+  <button type="submit" id="submit">注 册</button>
+  <button type="button" id="sendcode" disabled>获取验证码</button>
+  <a href="login">已有账号？去登录</a>
+  <span aria-hidden="true">※仅仅装饰※</span>
+</form>
+</body></html>
