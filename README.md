@@ -39,7 +39,7 @@ cd casefront
 **Skill 安装（用例生成侧）**
 
 1. 到 [Releases](https://github.com/DMianZhi/casefront/releases) 下载 `casefront-skill-vX.Y.Z.zip`
-   并解压，得到 `casefront/` 目录（含 `SKILL.md` 与 `rules/` 内置规则卡）
+   并解压，得到 `casefront/` 目录（含 `SKILL.md` 与 `references/rules/` 内置规则卡）
 2. 放入你所用 AI 助手的技能目录：
    - Comate：`~/.wpscomate/agent/skills/custom/casefront`
    - Claude Code：`~/.claude/skills/casefront`
