@@ -12,7 +12,7 @@ description: Web 测试用例 AI 前置助手。读取插件产出的 inventory.
 
 - `inventory.json`：插件产出（契约 §4.1）；`confidence < 0.9` 与 `unclassified` 需走裁决
 - `rules/*.yaml`：项目级规则卡，按 `applies_to == interaction_type` 覆写/追加内置标准卡（§4.5）
-- `references/rules/*.yaml`：内置 5 张标准卡（text_input / select / button / file_upload / date_picker）
+- `references/rules/*.yaml`：内置 12 张标准卡，覆盖全部 interaction_type（text_input / textarea / select / radio / checkbox / button / link / file_upload / date_picker / pagination / dialog / tabs）
 - `demo/examples.md`：测试者手写用例样例，用于风格对齐（可缺省）
 - 对话中的临时业务规则
 

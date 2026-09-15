@@ -1,0 +1,15 @@
+id: radio-standard
+applies_to: radio
+rules:
+  - id: single-choice
+    title: 组内互斥（选中一项其余自动取消）
+    priority: P0
+  - id: default-selection
+    title: 默认选中项校验
+    priority: P1
+  - id: label-click
+    title: 点击文字标签也能选中（label 关联）
+    priority: P2
+  - id: keyboard-nav
+    title: 方向键在组内切换
+    priority: P2

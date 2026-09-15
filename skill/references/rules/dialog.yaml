@@ -1,0 +1,15 @@
+id: dialog-standard
+applies_to: dialog
+rules:
+  - id: open-close
+    title: 打开/关闭路径一致性（确定/取消/遮罩/Esc）
+    priority: P0
+  - id: focus-trap
+    title: 焦点圈闭（Tab 不逃出弹窗，关闭后焦点归还触发元素）
+    priority: P1
+  - id: mask-click
+    title: 点遮罩关闭行为与配置一致
+    priority: P2
+  - id: scroll-lock
+    title: 弹窗打开时底层页面滚动锁定
+    priority: P2

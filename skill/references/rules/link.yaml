@@ -1,0 +1,15 @@
+id: link-standard
+applies_to: link
+rules:
+  - id: href-target
+    title: 跳转目标正确（本页/新标签、锚点定位）
+    priority: P0
+  - id: dead-link
+    title: 死链/404 检查
+    priority: P1
+  - id: state-style
+    title: hover/focus/visited 状态样式
+    priority: P2
+  - id: external-rel
+    title: 外链安全属性（rel="noopener"）
+    priority: P2

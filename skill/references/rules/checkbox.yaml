@@ -1,0 +1,15 @@
+id: checkbox-standard
+applies_to: checkbox
+rules:
+  - id: select-all
+    title: 全选/反选/部分选中联动（三态）
+    priority: P0
+  - id: independent-toggle
+    title: 独立勾选/取消与默认态
+    priority: P1
+  - id: count-sync
+    title: 选中计数与提交数据一致
+    priority: P1
+  - id: indeterminate
+    title: 半选状态（部分选中时父框显示）
+    priority: P2

@@ -1,0 +1,15 @@
+id: pagination-standard
+applies_to: pagination
+rules:
+  - id: state-preserve
+    title: 翻页后筛选/勾选/搜索条件保持
+    priority: P0
+  - id: boundary-page
+    title: 首页/末页按钮禁用态
+    priority: P1
+  - id: jump-page
+    title: 跳页输入越界（负数/超大值/非数字）
+    priority: P1
+  - id: total-consistency
+    title: 总条数与页码数一致（末页不满页）
+    priority: P2

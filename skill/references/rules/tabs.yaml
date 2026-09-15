@@ -1,0 +1,15 @@
+id: tabs-standard
+applies_to: tabs
+rules:
+  - id: switch-content
+    title: 切换后内容区与高亮一致
+    priority: P0
+  - id: url-state
+    title: 可路由页签的状态记忆（刷新/前进后退）
+    priority: P1
+  - id: keyboard-tabs
+    title: 方向键切换与 Tab 语义正确
+    priority: P2
+  - id: disabled-tab
+    title: 禁用页签不可达
+    priority: P2

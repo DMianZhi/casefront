@@ -242,7 +242,7 @@ workspace/
 
 **做：**
 - 单页快照采集（CDP 主路 + DevTools 冲突降级提示）
-- 首批 5 张内置规则卡：text_input / select / button / file_upload / date_picker（radio/checkbox 复用子集）
+- 首批 5 张内置规则卡：text_input / select / button / file_upload / date_picker（M0）；v0.2.0 扩充至 12 张，覆盖 INTERACTION_TYPES 全部类型（radio/checkbox 等独立成卡，不再复用子集）
 - cases.md + cases.json 带追溯链
 - 对话勾选（v0）；契约预留 selected 直写（v1）
 - 内置卡 + 项目 rules/ 双层规则体系

@@ -1,0 +1,16 @@
+id: textarea-standard
+applies_to: textarea
+rules:
+  - id: multiline-submit
+    title: 多行内容含换行符的提交与回显
+    detail: 换行在提交后是否保留/被过滤，回显是否一致
+    priority: P1
+  - id: paste-large-text
+    title: 大段粘贴超长文本
+    priority: P1
+  - id: char-count
+    title: 字数计数器与 maxlength 限制一致
+    priority: P2
+  - id: xss-injection
+    title: 富文本特殊字符与脚本注入
+    priority: P1
