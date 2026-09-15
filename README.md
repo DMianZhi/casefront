@@ -38,13 +38,24 @@ cd casefront
 
 **Skill 安装（用例生成侧）**
 
+首选：一行命令（需 Node.js 22.20+，支持 Claude Code、Cursor、Codex、Windsurf、opencode 等 79 个 agent）：
+
+```bash
+npx skills add DMianZhi/casefront
+```
+
+交互式选择目标 agent；非交互可指定：`npx skills add DMianZhi/casefront --agent claude-code -y`。
+
+兜底：手动安装（无 Node 环境，或使用 Comate 时）：
+
 1. 到 [Releases](https://github.com/DMianZhi/casefront/releases) 下载 `casefront-skill-vX.Y.Z.zip`
    并解压，得到 `casefront/` 目录（含 `SKILL.md` 与 `references/rules/` 内置规则卡）
 2. 放入你所用 AI 助手的技能目录：
    - Comate：`~/.wpscomate/agent/skills/custom/casefront`
    - Claude Code：`~/.claude/skills/casefront`
    - 其他 agent：按其 skill 安装约定放置（SKILL.md 遵循 agentskills.io 规范，纯 Markdown + YAML，无平台绑定）
-3. 新会话中说「用 casefront 生成测试用例」或直接 `@ inventory.json` 触发
+
+新会话中说「用 casefront 生成测试用例」或直接 `@ inventory.json` 触发。
 
 ## 使用流程
 
