@@ -19,3 +19,7 @@ workspace/
 
 # 会话级运行时产物（真实页面数据）统一不入库，无论落在仓库何处
 /2???-??-??_*/
+
+# WXT 构建产物与生成类型
+extension/.output/
+extension/.wxt/
