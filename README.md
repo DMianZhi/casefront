@@ -10,7 +10,7 @@
 
 ```
 casefront/
-  extension/               # 浏览器插件（CDP 采集、popup 勾选、下载导出）
+  extension/               # 浏览器插件（WXT + React + TypeScript；CDP 采集、popup 勾选、下载导出）
   skill/                   # 用例生成 Skill（SKILL.md + 内置规则卡），遵循 agentskills 规范
   demo/examples.md         # 测试者手写的风格样例（few-shot，可留空）
   docs/superpowers/specs/  # 设计文档
@@ -34,14 +34,20 @@ cd casefront
 # chrome://extensions → 加载已解压的扩展程序 → 选 casefront/extension/.output/chrome-mv3/
 ```
 
-开发模式（插件侧已迁移至 WXT 构建）：
+插件侧已迁移至 **WXT + React + TypeScript**（v0.3.0），构建与开发：
 
 ```bash
-cd extension && npm install && npm run dev   # HMR 开发
-npm test                                     # Vitest 全量测试
-npm run zip                                  # 产出分发包
+cd extension
+npm install        # 含 postinstall 自动 wxt prepare
+npm run dev        # HMR 开发（加载 .output/chrome-mv3）
+npm test           # Vitest 全量测试（纯逻辑 27 + 组件 4）
+npm run compile    # tsc --noEmit 类型检查
+npm run build      # 产物输出 .output/chrome-mv3
+npm run zip        # 产出分发包 casefront-extension-vX.Y.Z-chrome.zip
 ```
 
+代码结构：`entrypoints/`（popup React 组件 + background CDP 编排）、`lib/`（纯逻辑 TS 模块，
+含契约类型单一事实源 `lib/inventory.ts`）、`tests/`（Vitest）。
 用户安装方式不变（加载 `.output/chrome-mv3` 或 Release zip）。
 
 要求：Chromium 内核浏览器（Chrome / Edge）；扫描使用 `chrome.debugger` 权限，首次加载确认即可。
@@ -83,11 +89,15 @@ npx skills add DMianZhi/casefront
 
 - [设计文档](docs/superpowers/specs/2026-09-14-web-test-case-assistant-design.md)
 - [M0 实现计划](docs/superpowers/plans/2026-09-14-casefront-m0-vertical-slice.md)
+- [插件重构设计（WXT + React + TS）](docs/superpowers/specs/2026-09-19-wxt-react-refactor-design.md)
+- [插件重构实现计划](docs/superpowers/plans/2026-09-19-wxt-react-refactor.md)
 
 ## 状态
 
 - [x] 头脑风暴 → 设计文档（已评审通过）
 - [x] M0 竖切：真实页面全链路（扫描 → 清单 → 用例）：829 元素采集 → 对话收敛 61 核心 → 18 条可追溯用例
 - [x] M1 可用性：同类折叠（去噪阈值可配）、popup 勾选直写 selected、下载导出 + 一键复制绝对路径
+- [x] M1.5 插件重构（v0.3.0）：WXT + React + TypeScript，契约类型单一事实源（`lib/inventory.ts`），
+      消息协议类型化，IndexedDB 存储抽接口，测试迁移 Vitest 并新增组件测试——行为与契约不变，为 M2/M3 打底
 - [ ] M2 学习闭环：临时业务规则 → 规则卡草稿、规则缺口报告
 - [ ] M3 团队化：导出适配器、多页串联、规则卡托管
