@@ -8,7 +8,7 @@
     "build": "wxt build",
     "zip": "wxt zip",
     "compile": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run && vitest run -c vitest.popup.config.ts"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
