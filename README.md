@@ -62,12 +62,11 @@ npx skills add DMianZhi/casefront
 
 交互式选择目标 agent；非交互可指定：`npx skills add DMianZhi/casefront --agent claude-code -y`。
 
-兜底：手动安装（无 Node 环境，或使用 Comate 时）：
+兜底：手动安装（无 Node 环境时）：
 
 1. 到 [Releases](https://github.com/DMianZhi/casefront/releases) 下载 `casefront-skill-vX.Y.Z.zip`
    并解压，得到 `casefront/` 目录（含 `SKILL.md` 与 `references/rules/` 内置规则卡）
 2. 放入你所用 AI 助手的技能目录：
-   - Comate：`~/.wpscomate/agent/skills/custom/casefront`
    - Claude Code：`~/.claude/skills/casefront`
    - 其他 agent：按其 skill 安装约定放置（SKILL.md 遵循 agentskills.io 规范，纯 Markdown + YAML，无平台绑定）
 
@@ -79,7 +78,7 @@ npx skills add DMianZhi/casefront
 2. 在勾选视图勾选要纳入用例生成的元素（新会话默认全选；同名会话重扫自动继承上次勾选）
 3. 点「保存并导出」→ 清单自动下载到
    `下载/casefront/<会话>/inventory.json`（popup 显示落盘绝对路径，「复制路径」一键复制）
-4. 把 inventory.json 交给你的 AI 编码助手（Comate、Codex、Claude Code 等均可），
+4. 把 inventory.json 交给你的 AI 编码助手（Claude Code、Codex、Cursor 等均可），
    运行 casefront Skill 生成用例
 
 > DevTools 冲突提示：Chrome 同一标签页只允许一个 debugger。开着 DevTools 时扫描会被占用，

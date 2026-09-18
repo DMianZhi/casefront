@@ -106,7 +106,7 @@ export default function App() {
       if (!res?.ok) { dispatch({ type: 'STATUS', kind: 'err', text: '导出失败：' + (res?.error ?? '未知错误') }); return; }
       if (res.absolute_path) {
         dispatch({ type: 'EXPORT_PATH', path: res.absolute_path });
-        dispatch({ type: 'STATUS', kind: 'ok', text: '已导出（selected 已写回清单）', sub: '在 Comate 中 @ 该文件生成用例' });
+        dispatch({ type: 'STATUS', kind: 'ok', text: '已导出（selected 已写回清单）', sub: '在 AI 助手中 @ 该文件生成用例' });
       } else {
         dispatch({ type: 'STATUS', kind: 'warn', text: '已导出（未解析到落盘绝对路径）', sub: res.path });
       }
