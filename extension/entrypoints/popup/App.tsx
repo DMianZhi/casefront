@@ -129,9 +129,15 @@ export default function App() {
         </div>
         <div className="mb-2.5 flex items-center gap-2">
           <button onClick={() => dispatch({ type: 'SET_ALL', checked: true })}
-                  className="inline-flex h-7 flex-1 items-center justify-center gap-1 rounded-lg bg-fill px-2.5 text-xs text-blue hover:bg-fill-hover">全选</button>
+                  className="inline-flex h-7 flex-1 items-center justify-center gap-1 rounded-lg bg-fill px-2.5 text-xs font-medium text-blue hover:bg-fill-hover active:bg-fill-press">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-[13px]"><path d="m4.5 12.5 5 5 10-11"/></svg>
+            全选
+          </button>
           <button onClick={() => dispatch({ type: 'SET_ALL', checked: false })}
-                  className="inline-flex h-7 flex-1 items-center justify-center gap-1 rounded-lg bg-fill px-2.5 text-xs text-blue hover:bg-fill-hover">全不选</button>
+                  className="inline-flex h-7 flex-1 items-center justify-center gap-1 rounded-lg bg-fill px-2.5 text-xs font-medium text-blue hover:bg-fill-hover active:bg-fill-press">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-[13px]"><path d="M6 12h12"/></svg>
+            全不选
+          </button>
           {/* review 视图 ExportBar 只作导出按钮，不显示路径行 */}
           <ExportBar onExport={exportInventory} exporting={state.exporting} exportPath={null} />
         </div>

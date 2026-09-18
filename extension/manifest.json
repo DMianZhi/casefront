@@ -1,9 +1,0 @@
-{
-  "manifest_version": 3,
-  "name": "CaseFront",
-  "version": "0.2.1",
-  "description": "Web 测试用例 AI 前置助手——采集页面交互清单",
-  "permissions": ["debugger", "downloads", "tabs"],
-  "action": { "default_popup": "src/popup.html", "default_title": "扫描此页" },
-  "background": { "service_worker": "src/background.js", "type": "module" }
-}

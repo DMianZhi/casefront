@@ -31,8 +31,18 @@ casefront/
 ```bash
 git clone https://github.com/DMianZhi/casefront.git
 cd casefront
-# chrome://extensions → 加载已解压的扩展程序 → 选 casefront/extension/
+# chrome://extensions → 加载已解压的扩展程序 → 选 casefront/extension/.output/chrome-mv3/
 ```
+
+开发模式（插件侧已迁移至 WXT 构建）：
+
+```bash
+cd extension && npm install && npm run dev   # HMR 开发
+npm test                                     # Vitest 全量测试
+npm run zip                                  # 产出分发包
+```
+
+用户安装方式不变（加载 `.output/chrome-mv3` 或 Release zip）。
 
 要求：Chromium 内核浏览器（Chrome / Edge）；扫描使用 `chrome.debugger` 权限，首次加载确认即可。
 
