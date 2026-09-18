@@ -5,6 +5,7 @@ import type { InteractionType } from '../lib/constants';
 describe('constants', () => {
   it('12 个交互类型，与 skill 规则卡一一对应', () => {
     expect(INTERACTION_TYPES).toHaveLength(12);
+    expect([...INTERACTION_TYPES]).toEqual(['text_input', 'textarea', 'select', 'radio', 'checkbox', 'button', 'link', 'file_upload', 'date_picker', 'pagination', 'dialog', 'tabs']);
     expect(INTERACTION_TYPES).toContain('text_input');
     expect(INTERACTION_TYPES).toContain('tabs');
   });
