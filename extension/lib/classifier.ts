@@ -7,6 +7,7 @@ const propOf = (c: Candidate, name: string): unknown =>
 
 const ROLE_TO_TYPE: Record<string, InteractionType> = {
   textbox: 'text_input',
+  searchbox: 'text_input',
   combobox: 'select',
   listbox: 'select',
   button: 'button',
@@ -14,6 +15,10 @@ const ROLE_TO_TYPE: Record<string, InteractionType> = {
   radio: 'radio',
   checkbox: 'checkbox',
 };
+
+// readonly 文本框 + 日期/时间占位符 → 日期类选择器（antd DatePicker/TimePicker 渲染为 readonly textbox，
+// 原生 input[type=date] 在上面 input_type 分支处理）。0.6 低信心，进 review 由 Skill 裁决。
+const PICKER_PLACEHOLDER = /日期|时间|date|time/i;
 
 // 入参带 Partial<EnrichedCandidate>：classify 只读 constraints（enrich 在 background 管线中已补齐），
 // 产出对象为 "spread candidate + 追加字段"，即原 JS 实现的等价形态，故用 as 断言为 ClassifiedElement。
@@ -26,8 +31,15 @@ export function classify(candidates: (Candidate & Partial<EnrichedCandidate>)[])
     if (t === 'file') { interaction_type = 'file_upload'; confidence = CONF_HIGH; }
     else if (t === 'date') { interaction_type = 'date_picker'; confidence = CONF_HIGH; }
     else if (c.role === 'textbox') {
-      interaction_type = propOf(c, 'multiline') ? 'textarea' : 'text_input';
-      confidence = CONF_HIGH;
+      // readonly + 日期/时间占位符 → 日期类选择器（antd DatePicker/TimePicker 渲染为 readonly textbox），
+      // 0.6 低信心进 review 由 Skill 裁决；原生 input[type=date] 在上面 input_type 分支处理
+      if (c.constraints?.readonly && PICKER_PLACEHOLDER.test(c.hints?.placeholder ?? '')) {
+        interaction_type = 'date_picker';
+        confidence = 0.6;
+      } else {
+        interaction_type = propOf(c, 'multiline') ? 'textarea' : 'text_input';
+        confidence = CONF_HIGH;
+      }
     } else if (ROLE_TO_TYPE[c.role]) {
       interaction_type = ROLE_TO_TYPE[c.role]!;
       confidence = CONF_HIGH;

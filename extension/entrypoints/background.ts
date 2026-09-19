@@ -3,10 +3,11 @@ import { classify, splitByConfidence } from '@/lib/classifier';
 import { denoise } from '@/lib/denoiser';
 import { foldGroups } from '@/lib/fold-groups';
 import { reduceAxtree } from '@/lib/reducer';
+import { enrich, resetEnrichSeq } from '@/lib/enrich';
 import { loadScan, saveScan } from '@/lib/storage';
 import { reconcileElements } from '@/lib/selection';
-import type { Candidate, EnrichedCandidate, Inventory } from '@/lib/inventory';
-import type { DebuggerSend, GetFullAXTreeResult, CallFunctionOnResult, ResolveNodeResult } from '@/lib/cdp-types';
+import type { EnrichedCandidate, Inventory } from '@/lib/inventory';
+import type { DebuggerSend, GetFullAXTreeResult } from '@/lib/cdp-types';
 import type { DownloadExportResponse, GetLastScanResponse, PopupRequest, ScanResponse } from '@/lib/messages';
 
 export default defineBackground(() => {
@@ -50,10 +51,10 @@ export default defineBackground(() => {
       // 2) 候选元素 + 逐个补 DOM 属性与几何
       const candidates = reduceAxtree(ax.nodes);
       await Promise.all([send('Runtime.enable', {}), send('DOM.enable', {})]);
-      const enriched: (Candidate & Partial<EnrichedCandidate>)[] = [];
-      enrichSeq = 0; // 每次扫描重置
+      resetEnrichSeq(); // 每次扫描重置
+      const enriched: EnrichedCandidate[] = [];
       for (const c of candidates) {
-        enriched.push(await enrich(c, send));
+        enriched.push(await enrich(c as EnrichedCandidate, send));
       }
       // 3) 去噪 → 同类折叠（精简模式；完整模式跳过）→ 分类 → 分流
       // 3) 去噪（denoise 自行计算 state，不读入参的 state；enrich 输出与旧版一致不含 state）
@@ -94,47 +95,6 @@ export default defineBackground(() => {
     } finally {
       try { await chrome.debugger.detach(target); } catch { /* 已分离 */ } // 任何路径必须 detach
     }
-  }
-
-  let enrichSeq = 0;
-  async function enrich(candidate: Candidate, send: DebuggerSend): Promise<Candidate & Partial<EnrichedCandidate>> {
-    const out: Candidate & Partial<EnrichedCandidate> = { ...candidate, hints: { css_selector: null, aria_path: null, placeholder: null }, constraints: { required: null, maxlength: null, pattern: null, input_type: null, disabled: false }, visible: true };
-    try {
-      const resolved = (await send<ResolveNodeResult>('DOM.resolveNode', { backendNodeId: candidate.backendDOMNodeId })) as ResolveNodeResult;
-      const obj = resolved?.object;
-      if (obj?.objectId) {
-        const evalr = (await send<CallFunctionOnResult>('Runtime.callFunctionOn', {
-          objectId: obj.objectId,
-          returnByValue: true,
-          functionDeclaration: `function () {
-            const el = this;
-            const r = el.getBoundingClientRect();
-            return {
-              tag: el.tagName, input_type: el.getAttribute('type'), required: el.required ?? null,
-              maxlength: el.maxLength && el.maxLength > 0 ? el.maxLength : null, pattern: el.getAttribute('pattern'),
-              placeholder: el.getAttribute('placeholder'), width: r.width, height: r.height,
-              rect_visible: r.width > 0 && r.height > 0
-            };
-          }`,
-        })) as CallFunctionOnResult;
-        const d = (evalr?.result?.value ?? {}) as Partial<{
-          tag: string; input_type: string | null; required: boolean | null; maxlength: number | null;
-          pattern: string | null; placeholder: string | null; rect_visible: boolean;
-        }>;
-        out.constraints = {
-          input_type: d.input_type ?? null,
-          required: d.required ?? null,
-          maxlength: d.maxlength ?? null,
-          pattern: d.pattern ?? null,
-          disabled: false, // 仅满足类型（ElementConstraints 要求该字段）；disabled 由 denoise 计入 state，运行期无人读此字段
-        };
-        out.hints!.placeholder = d.placeholder ?? null;
-        out.hints!.css_selector = d.tag ? String(d.tag).toLowerCase() : null;
-        out.visible = d.rect_visible !== false;
-      }
-    } catch { /* 补属性失败不阻塞：诚实降级为无约束 */ }
-    out.backendDOMNodeId = candidate.backendDOMNodeId ?? `alt-${++enrichSeq}`;
-    return out;
   }
 
   // 唯一导出路径：浏览器下载（SW 侧；data URL 因 MV3 SW 无 createObjectURL）

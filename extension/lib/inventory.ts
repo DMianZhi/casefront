@@ -28,6 +28,8 @@ export interface ElementConstraints {
   maxlength: number | null;
   pattern: string | null;
   input_type: string | null;
+  /** 仅内部管线使用（antd 日期/时间控件识别启发式）；导出契约不含该字段 */
+  readonly?: boolean | null;
   disabled: boolean;
 }
 
