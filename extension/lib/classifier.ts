@@ -14,6 +14,11 @@ const ROLE_TO_TYPE: Record<string, InteractionType> = {
   link: 'link',
   radio: 'radio',
   checkbox: 'checkbox',
+  tab: 'tabs',
+  switch: 'checkbox', // 开关是布尔选择，checkbox 规则卡（独立切换/默认态）适用
+  menuitem: 'button',
+  menuitemcheckbox: 'checkbox',
+  menuitemradio: 'radio',
 };
 
 // readonly 文本框 + 日期/时间占位符 → 日期类选择器（antd DatePicker/TimePicker 渲染为 readonly textbox，
@@ -31,9 +36,10 @@ export function classify(candidates: (Candidate & Partial<EnrichedCandidate>)[])
     if (t === 'file') { interaction_type = 'file_upload'; confidence = CONF_HIGH; }
     else if (t === 'date') { interaction_type = 'date_picker'; confidence = CONF_HIGH; }
     else if (c.role === 'textbox') {
-      // readonly + 日期/时间占位符 → 日期类选择器（antd DatePicker/TimePicker 渲染为 readonly textbox），
-      // 0.6 低信心进 review 由 Skill 裁决；原生 input[type=date] 在上面 input_type 分支处理
-      if (c.constraints?.readonly && PICKER_PLACEHOLDER.test(c.hints?.placeholder ?? '')) {
+      // 占位符含日期/时间语义 → 日期类选择器（antd DatePicker/TimePicker 渲染为普通 textbox，
+      // input 默认可编辑所以无法用 readonly 区分；原生 input[type=date] 在上面 input_type 分支处理）。
+      // 0.6 低信心进 review 由 Skill 裁决，误报代价可控。
+      if (PICKER_PLACEHOLDER.test(c.hints?.placeholder ?? '')) {
         interaction_type = 'date_picker';
         confidence = 0.6;
       } else {

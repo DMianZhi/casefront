@@ -13,6 +13,7 @@ export interface AxNode {
 const MAPPABLE_ROLES = new Set([
   'textbox', 'combobox', 'listbox', 'radio', 'checkbox', 'button',
   'link', 'menuitemcheckbox', 'menuitemradio', 'searchbox',
+  'tab', 'switch', 'menuitem',
 ]);
 
 // AXTree → 候选交互元素：role 可映射、未忽略、且无可映射交互后代的节点
