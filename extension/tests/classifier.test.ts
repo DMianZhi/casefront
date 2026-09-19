@@ -39,8 +39,8 @@ it('input_type=date 走 date_picker；低信心项由 splitByConfidence 分流',
 it('searchbox 归 text_input；readonly+日期占位符启发式走 date_picker 低信心', () => {
   const r = classify([
     cand({ role: 'searchbox', name: '搜索文章' }),
-    cand({ name: '入职日期', hints: { css_selector: null, aria_path: null, placeholder: '请选择日期' }, constraints: { readonly: true } } as never),
-    cand({ role: 'combobox', name: '所在城市', hints: { css_selector: null, aria_path: null, placeholder: '请选择省市' }, constraints: { readonly: true } } as never),
+    cand({ name: '入职日期', hints: { css_selector: null, aria_path: null, placeholder: '请选择日期' } } as never),
+    cand({ role: 'combobox', name: '所在城市', hints: { css_selector: null, aria_path: null, placeholder: '请选择省市' } } as never),
   ]);
   expect(r[0]!.interaction_type).toBe('text_input');
   expect(r[0]!.confidence).toBe(CONF_HIGH);

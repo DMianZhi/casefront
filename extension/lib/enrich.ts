@@ -54,7 +54,9 @@ export async function enrich(candidate: EnrichedCandidate, send: DebuggerSend): 
       if (d.has_file_input && !out.constraints.input_type) out.constraints.input_type = 'file';
       out.hints.placeholder = d.placeholder ?? null;
       out.hints.css_selector = d.tag ? String(d.tag).toLowerCase() : null;
-      out.visible = d.rect_visible !== false;
+      // 实测：antd 等组件库的 width:0 按钮（含 1px 边框）rect 为 2×2，">0" 判不住——
+      // 任一维度 <4px 的盒子不构成可用交互目标，按不可见处理（denoise 丢弃）
+      out.visible = d.rect_visible === true && (d.width ?? 0) > 2 && (d.height ?? 0) > 2;
       out.bounds = { width: d.width, height: d.height };
     }
   } catch { /* 补属性失败不阻塞：诚实降级为无约束 */ }
