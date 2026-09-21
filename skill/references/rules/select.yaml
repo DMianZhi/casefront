@@ -3,10 +3,29 @@ applies_to: select
 rules:
   - id: default-value
     title: 默认值校验
+    detail: 初始渲染时默认选中项与需求一致；无默认值时显示占位（如"请选择"）
     priority: P1
+  - id: empty-submit
+    title: 必选未选提交
+    detail: 必选下拉停留在占位项直接提交，观察错误提示与请求拦截
+    priority: P0
   - id: option-roundtrip
     title: 选项往返（选后改选其他项）
+    detail: 选中 A 后改选 B，提交值与最终显示一致；改选后联动区域正确刷新
     priority: P2
   - id: filter-reflow
     title: 带搜索/筛选的下拉在输入后选项集是否正确
+    detail: 输入关键字后选项过滤正确；清空关键字恢复全量；无匹配时给出空态提示
+    priority: P2
+  - id: keyboard-navigation
+    title: 键盘操作
+    detail: 方向键移动选项、Enter 确认、Esc 关闭、Home/End 跳首尾；纯键盘可完成选择
+    priority: P2
+  - id: disabled-option
+    title: 禁用选项不可选
+    detail: 禁用项视觉置灰且点击/键盘均无法选中
+    priority: P1
+  - id: clearable-reset
+    title: 可清空与重置
+    detail: 有清空按钮时点击后回到占位态；表单重置时下拉回到默认值
     priority: P2

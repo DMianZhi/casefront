@@ -3,6 +3,7 @@ applies_to: text_input
 rules:
   - id: empty-submit
     title: 空值提交
+    detail: 必填字段为空直接提交，观察错误提示出现且请求被拦截；非必填为空可正常提交
     priority: P0
   - id: boundary-min-max
     title: 边界值测试
@@ -10,8 +11,25 @@ rules:
     priority: P1
   - id: whitespace-trim
     title: 前后空格处理
+    detail: 输入前后带空格提交，观察是否 trim、回显与存储是否一致
     priority: P2
   - id: xss-injection
     title: 特殊字符与脚本注入
     detail: `<img src=x onerror=alert(1)>` 等 payload，观察转义/告警
     priority: P1
+  - id: format-pattern
+    title: 格式校验（pattern/正则）
+    detail: 按 constraints.pattern 取合法/非法代表值各一（如手机号 11 位、邮箱格式）；非法值提交应被拦截并提示
+    priority: P1
+  - id: required-mark
+    title: 必填标识与提示一致性
+    detail: 必填字段有 * 标识；提交后错误提示文案与字段对应，不张冠李戴
+    priority: P1
+  - id: paste-consistency
+    title: 粘贴输入一致性
+    detail: 粘贴内容与键入内容走同一校验路径；粘贴超长文本时截断或提示行为一致
+    priority: P2
+  - id: ime-emoji-fullwidth
+    title: IME/emoji/全角字符
+    detail: 输入中文全角字符、emoji（如 😀）、组合字符，观察计数、存储与回显是否正常
+    priority: P2

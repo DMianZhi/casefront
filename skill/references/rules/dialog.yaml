@@ -3,13 +3,27 @@ applies_to: dialog
 rules:
   - id: open-close
     title: 打开/关闭路径一致性（确定/取消/遮罩/Esc）
+    detail: 所有关闭路径（确定/取消/X/遮罩/Esc）行为一致；确定才提交，取消不提交
     priority: P0
+  - id: initial-focus
+    title: 打开时焦点落位
+    detail: 弹窗打开后焦点自动落在弹窗内首个可交互元素（WCAG 2.1 AA 要求）
+    priority: P1
   - id: focus-trap
     title: 焦点圈闭（Tab 不逃出弹窗，关闭后焦点归还触发元素）
+    detail: Tab/Shift+Tab 在弹窗内循环；关闭后焦点回到触发按钮
+    priority: P1
+  - id: form-invalid-keep-open
+    title: 表单校验失败不关闭
+    detail: 弹窗内表单校验失败时弹窗保持打开并提示，不丢用户输入
     priority: P1
   - id: mask-click
     title: 点遮罩关闭行为与配置一致
     priority: P2
   - id: scroll-lock
     title: 弹窗打开时底层页面滚动锁定
+    priority: P2
+  - id: nested-dialog
+    title: 嵌套弹窗
+    detail: 弹窗内再开子弹窗：焦点圈闭在子弹窗；逐层关闭后焦点逐层归还
     priority: P2

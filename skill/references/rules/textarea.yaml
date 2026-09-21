@@ -1,16 +1,27 @@
 id: textarea-standard
 applies_to: textarea
 rules:
+  - id: empty-submit
+    title: 空值提交
+    detail: 必填多行文本为空直接提交，观察错误提示与请求拦截
+    priority: P0
   - id: multiline-submit
     title: 多行内容含换行符的提交与回显
     detail: 换行在提交后是否保留/被过滤，回显是否一致
     priority: P1
   - id: paste-large-text
     title: 大段粘贴超长文本
+    detail: 粘贴超过 maxlength 的文本，观察截断/提示/计数器行为
     priority: P1
   - id: char-count
     title: 字数计数器与 maxlength 限制一致
+    detail: 输入至边界时计数器显示与实际限制一致；超限后无法继续输入或给出提示
+    priority: P2
+  - id: whitespace-only
+    title: 纯空白内容
+    detail: 只输入空格/换行的内容提交，观察是否视为空值处理
     priority: P2
   - id: xss-injection
     title: 富文本特殊字符与脚本注入
+    detail: 含 HTML 标签与脚本 payload 的内容提交，观察转义与回显
     priority: P1

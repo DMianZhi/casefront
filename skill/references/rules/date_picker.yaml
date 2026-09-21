@@ -1,12 +1,27 @@
 id: date-picker-standard
 applies_to: date_picker
 rules:
+  - id: manual-invalid-date
+    title: 手动输入非法日期
+    detail: 直接键入 2-30、13 月、2024-02-31 等非法值，观察拦截或自动纠正
+    priority: P1
+  - id: leap-year
+    title: 闰年 2/29
+    detail: 闰年 2 月 29 可选且存储正确；平年同日不可选或提示
+    priority: P1
   - id: month-boundary
     title: 跨月/跨年切换
+    detail: 面板切换月份/年份后日期与星期对齐；跨年切换不丢已选值
     priority: P1
   - id: past-date
     title: 过去日期（如业务禁止）
+    detail: 业务禁止的过去日期不可选或提交时拦截；disabledDate 配置生效
     priority: P2
   - id: range-order
     title: 结束早于开始（区间选择）
+    detail: 区间选择时结束日期早于开始日期：自动交换/拦截/提示，行为与需求一致
+    priority: P1
+  - id: range-boundary
+    title: 可选范围边界
+    detail: min/max 边界日期可选，边界外日期置灰不可选
     priority: P1

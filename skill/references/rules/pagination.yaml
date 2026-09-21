@@ -3,13 +3,29 @@ applies_to: pagination
 rules:
   - id: state-preserve
     title: 翻页后筛选/勾选/搜索条件保持
+    detail: 翻页后筛选条件、已勾选项、搜索关键字不丢失；返回原页时状态恢复
     priority: P0
   - id: boundary-page
     title: 首页/末页按钮禁用态
+    detail: 首页时"上一页"禁用、末页时"下一页"禁用；页码不越界
     priority: P1
   - id: jump-page
     title: 跳页输入越界（负数/超大值/非数字）
+    detail: 跳页框输入 0、-1、超大值、字母：拦截或钳制到有效范围
+    priority: P1
+  - id: page-size-change
+    title: 切换每页条数
+    detail: 修改 pageSize 后回到第一页并重新计算总页数；数据量正确刷新
+    priority: P1
+  - id: rapid-click-race
+    title: 快速连点防竞态
+    detail: 快速连点上一页/下一页，最终页码与数据一致（后发先至请求需取消或忽略）
     priority: P1
   - id: total-consistency
     title: 总条数与页码数一致（末页不满页）
+    detail: ceil(total/pageSize) 与页码数一致；末页条数 = total - (页数-1)×pageSize
+    priority: P2
+  - id: url-sync
+    title: 页码 URL 同步
+    detail: 可分享场景下页码写入 URL（query/hash），刷新/回退后停留在原页
     priority: P2

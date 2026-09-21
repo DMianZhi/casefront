@@ -3,13 +3,24 @@ applies_to: tabs
 rules:
   - id: switch-content
     title: 切换后内容区与高亮一致
+    detail: 点击页签后内容区立即更新且高亮跟随；快速连续切换最终状态正确
     priority: P0
   - id: url-state
     title: 可路由页签的状态记忆（刷新/前进后退）
+    detail: 页签状态写入 URL（query/hash），刷新/回退/分享链接后恢复到对应页签
+    priority: P1
+  - id: switch-back-preserve
+    title: 切回状态保持
+    detail: 切走再切回，页签内已填表单/滚动位置/子状态不丢失（keep-alive 或等价机制）
     priority: P1
   - id: keyboard-tabs
     title: 方向键切换与 Tab 语义正确
     priority: P2
   - id: disabled-tab
     title: 禁用页签不可达
+    detail: 禁用页签置灰，点击/键盘/URL 直达均无法激活
+    priority: P2
+  - id: lazy-load
+    title: 懒加载首次切换才请求
+    detail: 懒加载页签首次切换才发请求；切回不重复请求（或按需求缓存策略）
     priority: P2

@@ -3,9 +3,19 @@ applies_to: radio
 rules:
   - id: single-choice
     title: 组内互斥（选中一项其余自动取消）
+    detail: 同组内选中任一项后其余项自动取消；提交值与选中项一致
+    priority: P0
+  - id: required-choice
+    title: 必选校验
+    detail: 必填单选组未选直接提交，观察错误提示与请求拦截
     priority: P0
   - id: default-selection
     title: 默认选中项校验
+    detail: 初始渲染的默认选中项与需求一致；无默认时全组未选
+    priority: P1
+  - id: disabled-option
+    title: 禁用项不可选
+    detail: 禁用项置灰且点击/键盘无法选中，也不影响组内其他项
     priority: P1
   - id: label-click
     title: 点击文字标签也能选中（label 关联）
