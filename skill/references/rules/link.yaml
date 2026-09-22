@@ -3,13 +3,24 @@ applies_to: link
 rules:
   - id: href-target
     title: 跳转目标正确（本页/新标签、锚点定位）
+    detail: 点击后跳转地址与预期一致；target=_blank 行为正确；锚点链接滚动到位
     priority: P0
   - id: dead-link
     title: 死链/404 检查
+    detail: 链接目标可达（非 404/5xx）；空 href 或 javascript:void(0) 需有替代交互
     priority: P1
+  - id: anchor-position
+    title: 锚点定位准确
+    detail: 页内锚点跳转后目标元素可见且位置正确（考虑固定头部偏移）
+    priority: P2
   - id: state-style
     title: hover/focus/visited 状态样式
     priority: P2
   - id: external-rel
     title: 外链安全属性（rel="noopener"）
+    detail: target=_blank 的外链带 rel="noopener noreferrer"，防反向 Tabnabbing（OWASP）
+    priority: P2
+  - id: link-text-semantics
+    title: 链接文本语义
+    detail: 链接文字描述目标内容（避免"点击这里"）；屏幕阅读器可读出完整意图
     priority: P2

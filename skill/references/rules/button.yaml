@@ -3,10 +3,25 @@ applies_to: button
 rules:
   - id: click-response
     title: 单击响应与结果反馈
+    detail: 单击后产生预期动作（提交/跳转/弹窗），有可见反馈（loading/成功/失败提示）
     priority: P0
   - id: double-click-guard
     title: 连续快速点击/防重复提交
+    detail: 快速连点只触发一次请求；重复提交被拦截或幂等
+    priority: P1
+  - id: keyboard-activate
+    title: 键盘激活
+    detail: Tab 聚焦后 Enter/Space 均可触发，行为与鼠标点击一致
+    priority: P1
+  - id: disabled-no-request
+    title: 禁用态不触发请求
+    detail: 置灰按钮点击/键盘均无动作、无网络请求；条件满足后恢复可用
     priority: P1
   - id: loading-state
     title: 请求进行中按钮状态（loading/禁用）
+    detail: 请求期间按钮 loading 或禁用，防止二次提交；结束后恢复
+    priority: P2
+  - id: cancel-no-side-effect
+    title: 取消类按钮无副作用
+    detail: 取消/关闭按钮不触发提交、不清空已填数据（除非明确提示）
     priority: P2

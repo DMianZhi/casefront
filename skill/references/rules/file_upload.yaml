@@ -1,12 +1,31 @@
 id: file-upload-standard
 applies_to: file_upload
 rules:
+  - id: no-file-submit
+    title: 未选文件提交
+    detail: 必传项未选文件直接提交，观察错误提示与请求拦截
+    priority: P0
   - id: type-magic-mismatch
     title: 类型限制与魔数伪装（改后缀）
+    detail: 改后缀的伪装文件（如 .exe 改 .jpg）应被内容嗅探拦截；accept 限制生效
     priority: P1
   - id: size-limit
     title: 大小边界（上限±1、0 字节）
+    detail: 上限边界及 ±1 字节文件、0 字节空文件分别上传，观察拦截或提示
+    priority: P1
+  - id: filename-special-chars
+    title: 文件名特殊字符/超长
+    detail: 含空格、中文、emoji、路径符的文件名及超长文件名，观察存储与回显
+    priority: P1
+  - id: multi-file-limit
+    title: 多文件数量上限
+    detail: 多选上传时超过数量上限的文件被拒绝并提示
     priority: P1
   - id: duplicate-name
     title: 重名/重复上传
+    detail: 同名文件重复上传：覆盖/追加/报错行为与需求一致
+    priority: P2
+  - id: cancel-during-upload
+    title: 上传中取消
+    detail: 上传进行中点取消，请求中止、进度清理、可重新发起上传
     priority: P2

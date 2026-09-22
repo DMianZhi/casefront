@@ -3,13 +3,24 @@ applies_to: checkbox
 rules:
   - id: select-all
     title: 全选/反选/部分选中联动（三态）
+    detail: 有全选框时：全选→子项全勾；取消全选→全不勾；部分勾选→全选框呈半选态
     priority: P0
   - id: independent-toggle
     title: 独立勾选/取消与默认态
+    detail: 单个勾选/取消不影响其他项；初始默认勾选项与需求一致
     priority: P1
   - id: count-sync
     title: 选中计数与提交数据一致
+    detail: 界面显示"已选 N 项"与实际提交数组长度一致
+    priority: P1
+  - id: disabled-state
+    title: 禁用态
+    detail: 禁用项置灰不可切换；已勾选的禁用项提交时按需求包含或排除（与产品确认）
     priority: P1
   - id: indeterminate
     title: 半选状态（部分选中时父框显示）
+    priority: P2
+  - id: keyboard-toggle
+    title: 键盘操作
+    detail: Tab 聚焦后 Space 切换勾选态，与鼠标点击行为一致
     priority: P2
