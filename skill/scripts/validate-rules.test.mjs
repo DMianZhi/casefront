@@ -155,3 +155,105 @@ test('resolveGaps:counts 缺该类型(无卡)时 missing/thin 均保留', () => 
   const gaps = [gap({ interaction_type: 'pagination' })];
   assert.equal(resolveGaps(gaps, new Map()).length, 1);
 });
+
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { runValidate, runGaps } from './validate-rules.mjs';
+
+// 每个用例独立临时目录,结束后清理
+function makeWs(files) {
+  const root = mkdtempSync(join(tmpdir(), 'casefront-m2-'));
+  for (const [rel, content] of Object.entries(files)) {
+    const p = join(root, rel);
+    mkdirSync(dirname(p), { recursive: true });
+    writeFileSync(p, content, 'utf8');
+  }
+  return root;
+}
+
+const BUILTIN_DIR = join(dirname(fileURLToPath(import.meta.url)), 'fixtures-builtin');
+
+test('runValidate:通过目录输出 ✓ 并 ok=true', () => {
+  const root = makeWs({
+    'rules/text-input-project.yaml':
+      'id: text-input-project\napplies_to: text_input\nrules:\n  - id: r1\n    title: t\n',
+  });
+  const r = runValidate(join(root, 'rules'), BUILTIN_DIR);
+  assert.equal(r.ok, true);
+  assert.match(r.report, /✓ 1 张卡校验通过/);
+  rmSync(root, { recursive: true, force: true });
+});
+
+test('runValidate:非法卡逐条报错带文件与行号', () => {
+  const root = makeWs({
+    'rules/bad.yaml':
+      'id: Bad_Card\napplies_to: slider\nrules: []\n',
+  });
+  const r = runValidate(join(root, 'rules'), BUILTIN_DIR);
+  assert.equal(r.ok, false);
+  assert.match(r.report, /bad\.yaml:1/); // 卡级错报在文件行 1 起
+  assert.match(r.report, /kebab-case/);
+  assert.match(r.report, /interaction_type/);
+  rmSync(root, { recursive: true, force: true });
+});
+
+test('runValidate:正式区卡 id 重复=错误;草稿与正式同 id=告警不失败', () => {
+  const card = (id) => `id: ${id}\napplies_to: button\nrules:\n  - id: r\n    title: t\n`;
+  const root = makeWs({
+    'rules/a-project.yaml': card('a-project'),
+    'rules/b-project.yaml': card('a-project'), // 重复
+    'rules/drafts/a-project.yaml': card('a-project'), // 告警
+  });
+  const r = runValidate(join(root, 'rules'), BUILTIN_DIR);
+  assert.equal(r.ok, false);
+  assert.match(r.report, /卡 id 重复/);
+  assert.match(r.report, /告警/);
+  rmSync(root, { recursive: true, force: true });
+});
+
+test('runGaps:--from 合并本次缺口 + 补齐移除 + 写回台账', () => {
+  const root = makeWs({
+    // 内置+项目合计:select 有 4 条规则 → thin 缺口应被移除;tabs 仍无卡 → 保留
+    'rules/select-project.yaml':
+      'id: select-project\napplies_to: select\nrules:\n  - id: a\n    title: t\n  - id: b\n    title: t\n  - id: c\n    title: t\n  - id: d\n    title: t\n',
+    'rules/gaps.json': JSON.stringify({
+      schema_version: '0.1',
+      gaps: [{ interaction_type: 'select', gap_type: 'thin', detail: '旧', suggestion: '旧', first_seen: 's0', sessions: ['s0'] }],
+    }),
+    'cases.json': JSON.stringify({
+      schema_version: '0.2',
+      meta: { session_id: 's1' },
+      rule_gaps: [
+        { interaction_type: 'tabs', gap_type: 'missing', detail: '无卡', suggestion: '新建 tabs 卡' },
+      ],
+    }),
+  });
+  // 注入 fixture 内置目录:真实内置卡已覆盖全部 12 类(tabs 有 6 条规则),
+  // 若用真实目录 tabs 的 missing 缺口会被清掉,场景"tabs 仍无卡 → 保留"不成立
+  const r = runGaps(root, { from: join(root, 'cases.json'), builtinDir: BUILTIN_DIR });
+  assert.equal(r.ok, true);
+  assert.equal(r.remaining, 1);
+  const saved = JSON.parse(readFileSync(join(root, 'rules/gaps.json'), 'utf8'));
+  assert.equal(saved.gaps.length, 1);
+  assert.equal(saved.gaps[0].interaction_type, 'tabs');
+  assert.deepEqual(saved.gaps[0].sessions, ['s1']);
+  rmSync(root, { recursive: true, force: true });
+});
+
+test('runGaps:gaps.json 不存在则新建;损坏则 ok=false 且不写回', () => {
+  const root1 = makeWs({ 'rules/.keep': '' });
+  const r1 = runGaps(root1, {});
+  assert.equal(r1.ok, true);
+  assert.deepEqual(JSON.parse(readFileSync(join(root1, 'rules/gaps.json'), 'utf8')), {
+    schema_version: '0.1', gaps: [],
+  });
+  rmSync(root1, { recursive: true, force: true });
+
+  const root2 = makeWs({ 'rules/gaps.json': '{broken' });
+  const r2 = runGaps(root2, {});
+  assert.equal(r2.ok, false);
+  assert.match(r2.report, /gaps\.json/);
+  rmSync(root2, { recursive: true, force: true });
+});

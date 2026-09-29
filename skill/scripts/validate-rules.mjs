@@ -93,3 +93,151 @@ export function resolveGaps(gaps, counts) {
     return g.gap_type === 'thin' ? n < THIN_THRESHOLD : true;
   });
 }
+
+// ---- 文件层与 CLI(spec §6)----
+import { readdirSync, readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const BUILTIN_DIR_DEFAULT = join(dirname(fileURLToPath(import.meta.url)), '..', 'references', 'rules');
+
+// 读目录下全部 *.yaml 的卡 id(解析失败的卡跳过)
+export function loadBuiltinCardIds(builtinDir) {
+  const ids = new Set();
+  if (!existsSync(builtinDir)) return ids;
+  for (const f of readdirSync(builtinDir).filter((f) => f.endsWith('.yaml'))) {
+    const { card, errors } = parseRuleCard(readFileSync(join(builtinDir, f), 'utf8'));
+    if (errors.length === 0 && card.id) ids.add(card.id);
+  }
+  return ids;
+}
+
+// 读单张卡文件 → { file, card, errors }
+function loadCardFile(path) {
+  const { card, errors } = parseRuleCard(readFileSync(path, 'utf8'));
+  return { file: path, card, errors };
+}
+
+// validate 子命令:校验 rulesDir 正式区 + drafts/ 草稿区
+export function runValidate(rulesDir, builtinDir = BUILTIN_DIR_DEFAULT) {
+  const report = [];
+  let ok = true;
+  const builtinIds = loadBuiltinCardIds(builtinDir);
+  // 自检模式:rulesDir 就是内置目录时跳过内置冲突检查(否则每张卡都与自己冲突)
+  if (resolve(rulesDir) === resolve(builtinDir)) builtinIds.clear();
+  const seenIds = new Map(); // 卡 id → 文件(正式区)
+  const draftIds = new Map();
+
+  const zones = [
+    { dir: rulesDir, label: '', dupMap: seenIds },
+    { dir: join(rulesDir, 'drafts'), label: 'drafts/', dupMap: draftIds },
+  ];
+  let checked = 0;
+  for (const zone of zones) {
+    if (!existsSync(zone.dir)) continue;
+    for (const f of readdirSync(zone.dir).filter((f) => f.endsWith('.yaml')).sort()) {
+      const path = join(zone.dir, f);
+      const { card, errors } = loadCardFile(path);
+      checked++;
+      for (const e of errors) {
+        ok = false;
+        report.push(`${zone.label}${f}:${e.line}: ${e.message}`);
+      }
+      for (const e of validateCard(card, builtinIds)) {
+        ok = false;
+        report.push(`${zone.label}${f}:${e.line ?? 1}: ${e.message}`);
+      }
+      if (card.id) {
+        if (zone.dupMap.has(card.id)) {
+          ok = false;
+          report.push(`${zone.label}${f}:1: 卡 id 重复: ${card.id}(另见 ${zone.dupMap.get(card.id)})`);
+        } else {
+          zone.dupMap.set(card.id, `${zone.label}${f}`);
+        }
+      }
+    }
+  }
+  // 草稿与正式卡同 id = 告警(入库语义是追加/更新,不算失败)
+  for (const [id, where] of draftIds) {
+    if (seenIds.has(id)) report.push(`告警:${where} 与正式卡 ${seenIds.get(id)} 同 id(入库时将走更新语义)`);
+  }
+  if (ok) return { ok, report: `✓ ${checked} 张卡校验通过` };
+  return { ok, report: report.join('\n') };
+}
+
+// gaps 子命令:读台账(+可选 --from 合并本次缺口)→ 按当前卡清理 → 写回
+// opts.builtinDir 可注入内置目录(单测用 fixture,生产用默认真实内置卡目录)
+export function runGaps(workspaceDir, { from, builtinDir = BUILTIN_DIR_DEFAULT } = {}) {
+  const rulesDir = join(workspaceDir, 'rules');
+  const gapsPath = join(rulesDir, 'gaps.json');
+
+  let book = { schema_version: '0.1', gaps: [] };
+  let bookExists = existsSync(gapsPath);
+  if (bookExists) {
+    try {
+      book = JSON.parse(readFileSync(gapsPath, 'utf8'));
+    } catch (e) {
+      return { ok: false, report: `gaps.json 损坏(${e.message}),请人工决定修复或重建——不静默覆盖跨会话台账`, remaining: -1 };
+    }
+  }
+
+  let gaps = Array.isArray(book.gaps) ? book.gaps : [];
+  let sessionId = '';
+  if (from) {
+    const cases = JSON.parse(readFileSync(from, 'utf8'));
+    sessionId = cases.meta?.session_id ?? '';
+    gaps = mergeGaps(gaps, cases.rule_gaps ?? [], sessionId);
+  }
+
+  // 规则数计数:内置卡 + 项目正式卡(草稿不计),按 applies_to 合并
+  const counts = new Map();
+  const bump = (dir) => {
+    if (!existsSync(dir)) return;
+    for (const f of readdirSync(dir).filter((f) => f.endsWith('.yaml'))) {
+      const { card, errors } = loadCardFile(join(dir, f));
+      if (errors.length || !card.applies_to) continue;
+      counts.set(card.applies_to, (counts.get(card.applies_to) ?? 0) + (card.rules?.length ?? 0));
+    }
+  };
+  bump(builtinDir);
+  bump(rulesDir);
+
+  const remaining = resolveGaps(gaps, counts);
+  const changed = !bookExists || remaining.length !== gaps.length ||
+    JSON.stringify(remaining) !== JSON.stringify(gaps);
+  if (changed) {
+    mkdirSync(rulesDir, { recursive: true });
+    writeFileSync(gapsPath, JSON.stringify({ schema_version: '0.1', gaps: remaining }, null, 2) + '\n', 'utf8');
+  }
+
+  const lines = [`缺口台账:${remaining.length} 条未补齐${changed ? '(已写回 gaps.json)' : '(无变化,未写盘)'}`];
+  for (const g of remaining) {
+    lines.push(`- [${g.gap_type}] ${g.interaction_type}:${g.detail} → ${g.suggestion}(首见 ${g.first_seen},${g.sessions.length} 个会话)`);
+  }
+  return { ok: true, report: lines.join('\n'), remaining: remaining.length };
+}
+
+// ---- CLI 入口 ----
+function main() {
+  const [, , cmd, arg, ...rest] = process.argv;
+  const flag = (name) => {
+    const i = rest.indexOf(name);
+    return i >= 0 ? rest[i + 1] : undefined;
+  };
+  if (cmd === 'validate') {
+    const r = runValidate(resolve(arg ?? 'workspace/rules'), resolve(rest[0] ?? BUILTIN_DIR_DEFAULT));
+    console.log(r.report);
+    process.exitCode = r.ok ? 0 : 1;
+  } else if (cmd === 'gaps') {
+    const fromFlag = flag('--from');
+    const r = runGaps(resolve(arg ?? 'workspace'), { from: fromFlag ? resolve(fromFlag) : undefined });
+    console.log(r.report);
+    process.exitCode = r.ok ? 0 : 1;
+  } else {
+    console.log('用法: validate-rules.mjs validate [rulesDir] [builtinDir] | gaps [workspaceDir] [--from cases.json]');
+    process.exitCode = 1;
+  }
+}
+
+// 直接执行时进 CLI,被 import(测试)时不执行
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();
