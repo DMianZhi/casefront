@@ -89,3 +89,69 @@ test('scope 空对象 / 非数组元素报错', () => {
   c2.rules[0].scope = { match_label: ['ok', 123] };
   assert.match(validateCard(c2, BUILTIN)[0].message, /match_label/);
 });
+
+import { mergeGaps, resolveGaps, THIN_THRESHOLD } from './validate-rules.mjs';
+
+const gap = (over = {}) => ({
+  interaction_type: 'date_picker',
+  gap_type: 'thin',
+  detail: '仅 2 条规则',
+  suggestion: '补跨月规则',
+  ...over,
+});
+
+test('THIN_THRESHOLD 为 3', () => {
+  assert.equal(THIN_THRESHOLD, 3);
+});
+
+test('mergeGaps:新键追加并带 first_seen/sessions', () => {
+  const out = mergeGaps([], [gap()], 's1');
+  assert.deepEqual(out, [{ ...gap(), first_seen: 's1', sessions: ['s1'] }]);
+});
+
+test('mergeGaps:同键合并——sessions 去重追加、detail 覆盖、first_seen 保留', () => {
+  const existing = [{ ...gap(), first_seen: 's1', sessions: ['s1'] }];
+  const incoming = [gap({ detail: '仍然只有 2 条', suggestion: '换建议' })];
+  const out = mergeGaps(existing, incoming, 's2');
+  assert.equal(out.length, 1);
+  assert.equal(out[0].first_seen, 's1');
+  assert.deepEqual(out[0].sessions, ['s1', 's2']);
+  assert.equal(out[0].detail, '仍然只有 2 条');
+  assert.equal(out[0].suggestion, '换建议');
+});
+
+test('mergeGaps:同会话重复出现不产生重复 session', () => {
+  const existing = [{ ...gap(), first_seen: 's1', sessions: ['s1'] }];
+  const out = mergeGaps(existing, [gap()], 's1');
+  assert.deepEqual(out[0].sessions, ['s1']);
+});
+
+test('mergeGaps:不修改入参', () => {
+  const existing = [];
+  mergeGaps(existing, [gap()], 's1');
+  assert.deepEqual(existing, []);
+});
+
+test('resolveGaps:missing 卡已存在(>0)则移除,仍缺失则保留', () => {
+  const gaps = [
+    gap({ interaction_type: 'select', gap_type: 'missing' }),
+    gap({ interaction_type: 'tabs', gap_type: 'missing' }),
+  ];
+  const counts = new Map([['select', 1], ['tabs', 0]]);
+  const out = resolveGaps(gaps, counts);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].interaction_type, 'tabs');
+});
+
+test('resolveGaps:thin 规则数达阈值移除,未达保留', () => {
+  const gaps = [gap({ interaction_type: 'radio' }), gap({ interaction_type: 'dialog' })];
+  const counts = new Map([['radio', THIN_THRESHOLD], ['dialog', 2]]);
+  const out = resolveGaps(gaps, counts);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].interaction_type, 'dialog');
+});
+
+test('resolveGaps:counts 缺该类型(无卡)时 missing/thin 均保留', () => {
+  const gaps = [gap({ interaction_type: 'pagination' })];
+  assert.equal(resolveGaps(gaps, new Map()).length, 1);
+});

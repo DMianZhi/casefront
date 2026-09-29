@@ -59,3 +59,37 @@ export function validateCard(card, builtinIds) {
   });
   return errs;
 }
+
+// ---- 缺口台账纯函数(spec §4.3)----
+
+export const THIN_THRESHOLD = 3; // 卡内规则数 < 3 = thin(spec §4.2)
+
+// 合并本次 rule_gaps 进台账:键 interaction_type+gap_type;
+// 同键 → sessions 去重追加、detail/suggestion 覆盖、first_seen 保留;新键 → 追加。
+// 纯函数,不修改入参。
+export function mergeGaps(existing, incoming, sessionId) {
+  const out = existing.map((g) => ({ ...g, sessions: [...(g.sessions ?? [])] }));
+  for (const inc of incoming) {
+    const hit = out.find(
+      (g) => g.interaction_type === inc.interaction_type && g.gap_type === inc.gap_type
+    );
+    if (hit) {
+      hit.detail = inc.detail;
+      hit.suggestion = inc.suggestion;
+      if (!hit.sessions.includes(sessionId)) hit.sessions.push(sessionId);
+    } else {
+      out.push({ ...inc, first_seen: sessionId, sessions: [sessionId] });
+    }
+  }
+  return out;
+}
+
+// 按当前卡况(内置+项目合并后的 interaction_type → 规则数)清理台账:
+// missing 且已有卡 → 移除;thin 且规则数 ≥ 阈值 → 移除;其余保留。纯函数。
+export function resolveGaps(gaps, counts) {
+  return gaps.filter((g) => {
+    const n = counts.get(g.interaction_type) ?? 0;
+    if (g.gap_type === 'missing') return n === 0;
+    return g.gap_type === 'thin' ? n < THIN_THRESHOLD : true;
+  });
+}
