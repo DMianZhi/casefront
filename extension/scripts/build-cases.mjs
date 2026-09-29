@@ -57,7 +57,7 @@ const skipped = {};
 for (const e of inv.elements) if (!covered.has(e.id)) skipped[e.id] = 'disabled：无交互用例价值';
 
 const out = {
-  schema_version: '0.1',
+  schema_version: '0.2',
   meta: {
     session_id: inv.meta.session_id,
     source_page: inv.meta.page_url,
