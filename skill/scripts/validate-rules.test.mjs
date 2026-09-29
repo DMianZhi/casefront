@@ -242,6 +242,27 @@ test('runGaps:--from 合并本次缺口 + 补齐移除 + 写回台账', () => {
   rmSync(root, { recursive: true, force: true });
 });
 
+test('runGaps:--from 的 cases.json 损坏/缺失时 ok=false 且不写回台账', () => {
+  const root = makeWs({
+    'rules/gaps.json': JSON.stringify({ schema_version: '0.1', gaps: [] }),
+    'cases.json': '{broken',
+  });
+  const before = readFileSync(join(root, 'rules/gaps.json'), 'utf8');
+  const r = runGaps(root, { from: join(root, 'cases.json'), builtinDir: BUILTIN_DIR });
+  assert.equal(r.ok, false);
+  assert.match(r.report, /cases\.json/);
+  assert.equal(readFileSync(join(root, 'rules/gaps.json'), 'utf8'), before);
+  rmSync(root, { recursive: true, force: true });
+});
+
+test('runGaps:gaps.json 合法 JSON 但非对象(null)→ ok=false 提示结构', () => {
+  const root = makeWs({ 'rules/gaps.json': 'null' });
+  const r = runGaps(root, {});
+  assert.equal(r.ok, false);
+  assert.match(r.report, /结构/);
+  rmSync(root, { recursive: true, force: true });
+});
+
 test('runGaps:gaps.json 不存在则新建;损坏则 ok=false 且不写回', () => {
   const root1 = makeWs({ 'rules/.keep': '' });
   const r1 = runGaps(root1, {});

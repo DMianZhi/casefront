@@ -92,6 +92,8 @@ export function parseRuleCard(text) {
           curRule.scope = {};
           inScope = true;
         }
+      } else if (!['id', 'title', 'detail', 'priority', 'scope'].includes(key)) {
+        errors.push({ line: lineNo, message: `规则下未知键: ${key}(合法键: id/title/detail/priority/scope)` });
       } else {
         const v = parseValue(rest, lineNo);
         if (v.array !== undefined) curRule[key] = v.array;

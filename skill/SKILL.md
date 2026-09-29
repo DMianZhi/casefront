@@ -86,6 +86,20 @@ rules:
       match_label: ["资产编号", "编号"]
 ```
 
+### 台账格式示例
+
+```jsonc
+// rules/gaps.json 台账格式(第 6 步维护;脚本 gaps 子命令读写同一格式)
+{
+  "schema_version": "0.1",
+  "gaps": [{
+    "interaction_type": "date_picker", "gap_type": "thin",
+    "detail": "…", "suggestion": "…",
+    "first_seen": "会话id", "sessions": ["会话id"]
+  }]
+}
+```
+
 ## 产出示例（字段级样例，禁止原样拷贝进产物）
 
 ```json

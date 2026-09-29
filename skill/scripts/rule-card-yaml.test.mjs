@@ -65,6 +65,16 @@ test('scope 下未知键报错', () => {
   assert.match(errors[0].message, /scope 下未知键/);
 });
 
+test('规则级未知键报错且不存入卡(拼写错误 detal)', () => {
+  const { card, errors } = parseRuleCard(
+    'id: c\napplies_to: button\nrules:\n  - id: r\n    title: t\n    detal: 拼错了\n'
+  );
+  assert.equal(errors.length, 1);
+  assert.equal(errors[0].line, 6);
+  assert.match(errors[0].message, /规则下未知键/);
+  assert.equal(card.rules[0].detal, undefined);
+});
+
 test('数组未闭合报错', () => {
   const { errors } = parseRuleCard(
     'id: c\napplies_to: button\nrules:\n  - id: r\n    title: t\n    scope:\n      match_label: ["a"\n'

@@ -179,12 +179,20 @@ export function runGaps(workspaceDir, { from, builtinDir = BUILTIN_DIR_DEFAULT }
     } catch (e) {
       return { ok: false, report: `gaps.json 损坏(${e.message}),请人工决定修复或重建——不静默覆盖跨会话台账`, remaining: -1 };
     }
+    if (!book || typeof book !== 'object' || Array.isArray(book)) {
+      return { ok: false, report: `gaps.json 结构须为对象({ schema_version, gaps: [...] }),实际 ${book === null ? 'null' : Array.isArray(book) ? '数组' : typeof book}——请人工决定修复或重建`, remaining: -1 };
+    }
   }
 
   let gaps = Array.isArray(book.gaps) ? book.gaps : [];
   let sessionId = '';
   if (from) {
-    const cases = JSON.parse(readFileSync(from, 'utf8'));
+    let cases;
+    try {
+      cases = JSON.parse(readFileSync(from, 'utf8'));
+    } catch (e) {
+      return { ok: false, report: `cases.json 读取/解析失败(${e.message})——--from 需要合法的 cases.json`, remaining: -1 };
+    }
     sessionId = cases.meta?.session_id ?? '';
     gaps = mergeGaps(gaps, cases.rule_gaps ?? [], sessionId);
   }
