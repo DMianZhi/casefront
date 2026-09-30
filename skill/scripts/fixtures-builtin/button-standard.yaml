@@ -1,0 +1,5 @@
+id: button-standard
+applies_to: button
+rules:
+  - id: click-response
+    title: 点击响应

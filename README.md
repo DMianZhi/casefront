@@ -90,6 +90,7 @@ npx skills add DMianZhi/casefront
 - [M0 实现计划](docs/superpowers/plans/2026-09-14-casefront-m0-vertical-slice.md)
 - [插件重构设计（WXT + React + TS）](docs/superpowers/specs/2026-09-19-wxt-react-refactor-design.md)
 - [插件重构实现计划](docs/superpowers/plans/2026-09-19-wxt-react-refactor.md)
+- [M2 学习闭环设计](docs/superpowers/specs/2026-09-29-m2-learning-loop-design.md)
 
 ## 状态
 
@@ -98,5 +99,6 @@ npx skills add DMianZhi/casefront
 - [x] M1 可用性：同类折叠（去噪阈值可配）、popup 勾选直写 selected、下载导出 + 一键复制绝对路径
 - [x] M1.5 插件重构（v0.3.0）：WXT + React + TypeScript，契约类型单一事实源（`lib/inventory.ts`），
       消息协议类型化，IndexedDB 存储抽接口，测试迁移 Vitest 并新增组件测试——行为与契约不变，为 M2/M3 打底
-- [ ] M2 学习闭环：临时业务规则 → 规则卡草稿、规则缺口报告
+- [x] M2 学习闭环：临时规则→草稿卡（rules/drafts/）→确认入库；结构化规则缺口 + gaps.json 跨会话台账；
+      规则卡 scope 字段（字段级规则作用域）；validate-rules.mjs 校验脚本（零依赖）
 - [ ] M3 团队化：导出适配器、多页串联、规则卡托管
